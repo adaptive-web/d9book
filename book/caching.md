@@ -32,7 +32,7 @@ general.json_example1:
   defaults:
     _title: 'JSON Play1'
     _controller: '\Drupal\general\Controller\CachePlay1::jsonExample1'
-#  methods: [GET]
+  #  methods: [GET]
   requirements:
     _permission: 'access content'
   options:
@@ -41,13 +41,13 @@ general.json_example1:
         type: 'integer'
 ```
 
-You can cause Drupal to return JSON data.  
+You can cause Drupal to return JSON data.
 
 ```php
   /**
    * Example of a simple controller method that returns a JSON response.
    *
-   * Note. You must enable the RESTful Web Services module to run this.
+   * Note, you must enable the RESTful Web Services module to run this.
    *
    * @param int $nid
    *  The node ID.
@@ -79,7 +79,7 @@ You can cause Drupal to return JSON data.
   }
 ```
 
-Note. This will return JSON data and in the headers, you will get `Cache-Control: max-age=3607, public`
+Note, this will return JSON data and in the headers, you will get `Cache-Control: max-age=3607, public`
 
 
 
@@ -92,7 +92,7 @@ This will cause Drupal to rebuild the page internally, but won\'t stop browsers 
 ```
 
 
-Create a custom module to implement setting max-age to 0. For example in ddd.module file:
+Create a custom module to implement setting max-age to 0. For example, in ddd.module file:
 
 ```php
 use Drupal\Core\Entity\EntityInterface;
@@ -141,7 +141,7 @@ abc_time_publisher.program_detail:
 
 ## Disable caching for a content type
 
-If someone tries to view a node of content type `search_home` caching is disabled and Drupal and the browser will always re-render the page. This is necessary when retrieving data from a third party source that you is frequently changed. It wouldn't work for a search page to show results from a previous search.
+If someone tries to view a node of content type `search_home` caching is disabled and Drupal and the browser will always re-render the page. This is necessary when retrieving data from a third-party source that is frequently changed. It wouldn't work for a search page to show results from a previous search.
 
 ```php
 use Drupal\Core\Entity\EntityInterface;
@@ -170,14 +170,14 @@ In the `build()` method of a block, you can specify caching. Here is an example 
   return $build;
 ```
 
-## Set cache context correctly when retrieving query, get or post parameters 
+## Set cache context correctly when retrieving query, get or post parameters
 
 Drupal will cache requests so be sure to correctly specify the cache context when building your render arrays if they need those parameters.
 
 For more on retrieving those, see [Retrieving query, get or post parameters](general#retrieve-query-get-or-post-parameters)
 
 
-See [Stack Exchange article - March 2017](https://drupal.stackexchange.com/questions/231953/get-in-drupal-8/231954#231954). 
+See [Stack Exchange article - March 2017](https://drupal.stackexchange.com/questions/231953/get-in-drupal-8/231954#231954).
 
 When trying to build the `$day` render array, this code needs the cache context `url.query_args:id` (to tell Drupal to vary by the query argument) to correctly return the appropriate values each time:
 
@@ -190,14 +190,13 @@ $day = [
 ];
 ```
 
-Read [more about Cacheability of render arrays on drupal.org - updated April 2023](https://www.drupal.org/docs/drupal-apis/render-api/cacheability-of-render-arrays)
-
+Read [more about Cacheability of render arrays on Drupal.org - updated April 2023](https://www.drupal.org/docs/drupal-apis/render-api/cacheability-of-render-arrays)
 
 
 
 ## Using cache tags
 
-To generate a list of cached node teasers that is always accurate, use cache tags. Here is a render array that will be updated time a node is added, deleted or edited:
+To display a list of cached node teasers (even for anonymous users) that is always accurate, use cache tags. Here is a render array that will be updated any time a node is added, deleted or edited:
 
 ```php
 $build = [
@@ -211,28 +210,120 @@ $build = [
 ];
 ```
 
-You can cause the cache to be invalidated only when a content type of `book` or `magazine` is changed in two ways:
+## Invalidating caches for specific nodes
 
-1. Include all node tags `(node:{#id})`, it doesn\'t matter if a new node of a particular type was added.
+When cache data becomes stale, invalidate the cache bins by building an array of cache names (or cache_ids) and call `invalidateMultiple()`:
 
-2. Create and control your own cache tag, and invalidate it when you want.
+```php
+  public function invalidateAllCaches() {
+    $citation_cache_id = "citations.program.$this->programNid.vote.$this->voteNumber.publisher.$this->publisherNid";
+    $correlation_cache_id = "correlations.program.$this->programNid.vote.$this->voteNumber.publisher.$this->publisherNid";
+    $expectation_cache_id = "expectations.program.$this->programNid.vote.$this->voteNumber.publisher.$this->publisherNid";
+    $cache_ids = [$citation_cache_id, $correlation_cache_id, $expectation_cache_id];
+    \Drupal::cache()->invalidateMultiple($cache_ids);
+  }
+```
 
-If you want a block to be rebuilt every time that a term from a particular vocab_id is added, changed, or deleted you can cache the term list.
-If you need to cache a term list per vocab_id - i.e.  every time that a term from a particular vocab_id is added, changed, or deleted the cache tag is invalided using `Cache::invalidateTags($tag_id)`. When Drupal goes to render this array, it will not use the cached version.
+
+## Invalidate cache tags when content is changed
+
+You can cause the cache to be invalidated when content of `book` or `magazine` is changed:
+
+```php
+$build = [
+  '#type' => 'markup',
+  '#markup' => $sMarkup,        
+  '#cache' => [
+    'keys' => ['home-all','home'],
+    'tags'=> ['node_list:book','node_list:magazine'], // invalidate cache when any nodes are added/changed etc.
+    'max-age' => '36600', // invalidate cache after 10h
+  ],
+];
+```
+
+
+## Custom cache tags
+
+To create your own custom cache tag, use the `Cache::invalidateTags()` method.  This will cause the cache to be invalidated when the tag is called.  Here is a block with a custom cache tag `custom_tag_example`:
+
+
+
+```php
+namespace Drupal\custom_module\Plugin\Block;
+
+use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Cache\Cache;
+
+/**
+ * Provides a 'Custom Cache Tag Block'.
+ *
+ * @Block(
+ *   id = "custom_cache_tag_block",
+ *   admin_label = @Translation("Custom Cache Tag Block")
+ * )
+ */
+class CustomCacheTagBlock extends BlockBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build() {
+    // Generate some dynamic content.
+    $output = 'Generated at: ' . date('H:i:s');
+
+    return [
+      '#markup' => $this->t('Custom cache block - @output', ['@output' => $output]),
+      '#cache' => [
+        'tags' => ['custom_tag_example'], // Our custom cache tag
+      ],
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheTags() {
+    // Add our custom cache tag.
+    return Cache::mergeTags(parent::getCacheTags(), ['custom_tag_example']);
+  }
+}
+```
+
+You can invalidate the cache tag with this code:
 
 ```php
 use Drupal\Core\Cache\Cache;
 
-function filters_invalidate_vocabulary_cache_tag($vocab_id) {
-  Cache::invalidateTags(['filters_vocabulary:' . $vocab_id]);
+/**
+ * Invalidates the custom cache tag.
+ */
+function custom_module_invalidate_custom_cache() {
+  Cache::invalidateTags(['custom_tag_example']);
 }
 ```
 
-If you want this to work for nodes, you may be able to  just change `$vocab_id` for `$node_type`.
+
+You can invalidate the custom cache tag when new articles are added to the site.  This will cause the cache to be invalidated and the block to be rebuilt.
+
+```php
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function my_module_node_insert(EntityInterface $entity) {
+  if ($entity->getEntityTypeId() === 'node' && $entity->bundle() === 'article') {
+    // Invalidate the cache when a new article is created.
+    custom_module_invalidate_custom_cache();
+  }
+}
+```
+
+
 
 ## Debugging Cache tags
 
-In `development.services.yml` set the `http.response debug_cacheability_headers` parameter:
+In `sites/development.services.yml` set the `http.response debug_cacheability_headers` parameter:
 
 ```yml
 parameters:
@@ -247,12 +338,12 @@ e.g at URL: `https://tea.ddev.site/teks/admin/srp/v2/program/590536/team/vote_nu
 
 Read more [on debugging cache tags - CacheableResponseInterface](https://www.drupal.org/docs/8/api/responses/cacheableresponseinterface#debugging) and [debugging cache tags in the cache API](https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags#s-debugging)
 
-Also look at [Matt Glaman's article on Debugging your render cacheable metadata in Drupal from Feb 2023](https://mglaman.dev/blog/debugging-your-render-cacheable-metadata-drupal)
+Also, look at [Matt Glaman's article on Debugging your render cacheable metadata in Drupal from Feb 2023](https://mglaman.dev/blog/debugging-your-render-cacheable-metadata-drupal)
 
 ![Debugging your render cacheable metadata in Drupal](/images/debugging-render-cache.png)
 
 
-### Invalidate the cache tag for a specific node
+## Invalidate the cache tag for a specific node
 
 In this function, we build a `$cache_tag` like `node: 123` and call `Cache:invalidateTags()` so Drupal will force a reload from the database for anything that depends on that node.
 
@@ -274,12 +365,12 @@ public function vote(array $options): void {
 ```
 
 ::: tip Note
-According to <https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags> Although many entity types follow a predictable cache tag format of `<entity type ID>:<entity ID>`, third-party code shouldn't rely on this. Instead, it should retrieve cache tags to invalidate for a single entity using its`::getCacheTags()` method, e.g., `$node->getCacheTags()`, `$user->getCacheTags()`, `$view->getCacheTags()` etc.
+From [Cache tags on Drupal.org updated July 2024](https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags) Although many entity types follow a predictable cache tag format of `<entity type ID>:<entity ID>`, third-party code shouldn't rely on this. Instead, it should retrieve cache tags to invalidate for a single entity using its`::getCacheTags()` method, e.g., `$node->getCacheTags()`, `$user->getCacheTags()`, `$view->getCacheTags()` etc.
 :::
 
-## Setting cache keys in a block
+## Setting cache keys for a block
 
-If you add some code to a block that includes the logged in user's name, you may find that the username will not be displayed correctly -- rather it may show the prior users name. This is because the cache context of user doesn't bubble up to the display of the container (e.g. the node that is displayed along with your custom block.)  Add this to bubble the cache contexts up.
+If you add some code to a block that includes the logged-in user's name, you may find that the username will not be displayed correctly -- rather it may show the prior user's name. This is because the cache context of user doesn't bubble up to the display of the container (e.g. the node that is displayed along with your custom block.)  Add this to bubble the cache contexts up.
 
 ```php
 public function getCacheContexts() {
@@ -376,7 +467,7 @@ Look in the response headers for:
 - `X-Drupal-Cache-Contexts: url.query_args`
 - `X-Drupal-Dynamic-Cache: HIT`  (or MISS)
 
-If you edit node 25, the cache will be invalidated and refreshing this page will show a MISS in the `X-Drupal-Dynamic-Cache` header. Also if you add a query parameter to the URL (e.g. `?a=b`) , the cache will be invalidated and the `X-Drupal-Dynamic-Cache` will show a MISS. Finally, if you change the site name, slogan or email, the cache will be invalidated and the `X-Drupal-Dynamic-Cache` will show a MISS.
+If you edit node 25, the cache will be invalidated and refreshing this page will show a MISS in the `X-Drupal-Dynamic-Cache` header. Also, if you add a query parameter to the URL (e.g. `?a=b`) , the cache will be invalidated and the `X-Drupal-Dynamic-Cache` will show a MISS. Finally, if you change the site name, slogan or email, the cache will be invalidated and the `X-Drupal-Dynamic-Cache` will show a MISS.
 
 
 
@@ -398,7 +489,7 @@ Read more in this [interesting article about caching REST resources](http://blog
 
 From `docroot/modules/custom/cm_api/src/CmAPIClient.php`
 
-Here a member is set up in the class:
+Here, a member is set up in the class:
 
 ```php
 /**
@@ -428,7 +519,7 @@ and retrieved with:
 $response_data = self::$cache['getPolicy'][$policy_number . $version];
 ```
 
-This relieves the back end load by rather getting the data from the cache if is in the cache (warm cache).
+This relieves the backend load by rather getting the data from the cache if it is in the cache (warm cache).
 
 The entire function is shown below. It is from `docroot/modules/custom/cm_api/src/CmAPIClient.php`:
 
@@ -469,7 +560,7 @@ In the hook_preprocess_node function, we are calling an api to get some data.
 function nzz_zzzzconnect_preprocess_node(&$variables) {
 ```
 
-Notice the references to `\Drupal::cache()`. First we check if this is our kind of node to process. Then we derive the `$cid` (cache id). We check the cache with a call to `->get($cid)` and if it fails we:
+Notice the references to `\Drupal::cache()`. First, we check if this is our kind of node to process. Then we derive the `$cid` (cache id). We check the cache with a call to `->get($cid)` and if it fails we:
 
 1.  call the api with `$client->request('GET')`
 2.  pull out the body with `$response->getBody()`
@@ -479,7 +570,7 @@ Notice the references to `\Drupal::cache()`. First we check if this is our kind 
 \Drupal::cache()->set($cid, $contents, REQUEST_TIME + (300));
 ```
 
-In future requests, we can just use the data from the cache. 
+In future requests, we can just use the data from the cache.
 
 ```php
 if ($node_type == 'zzzzfeed' && $published) {
@@ -574,22 +665,9 @@ Here is a complete function which loads data from the cache.  If the cache is em
   }
 ```
 
-Read more about the [Cache API](https://api.drupal.org/api/drupal/core!core.api.php/group/cache)
+Read more about the [Cache API on Drupal.org](https://api.drupal.org/api/drupal/core!core.api.php/group/cache)
 
 
-## Invalidating caches
-
-When cache data becomes stale, quickly invalidate the cache bins by building an array of cache names (or cache_ids) and call `invalidateMultiple()`:
-
-```php
-  public function invalidateAllCaches() {
-    $citation_cache_id = "citations.program.$this->programNid.vote.$this->voteNumber.publisher.$this->publisherNid";
-    $correlation_cache_id = "correlations.program.$this->programNid.vote.$this->voteNumber.publisher.$this->publisherNid";
-    $expectation_cache_id = "expectations.program.$this->programNid.vote.$this->voteNumber.publisher.$this->publisherNid";
-    $cache_ids = [$citation_cache_id, $correlation_cache_id, $expectation_cache_id];
-    \Drupal::cache()->invalidateMultiple($cache_ids);
-  }
-```
 
 ## Make a response dependent on any taxonomy term changes with cache tags
 
@@ -643,7 +721,7 @@ general.cache_example1:
   }
 ```
 
-Here is a screen shot where both `node_list` and `taxonomy_term_list` are specified for the current page.
+Here is a screenshot where both `node_list` and `taxonomy_term_list` are specified for the current page.
 
 ![Cache tags in Chrome](/images/cache-tags1.png)
 
@@ -727,7 +805,7 @@ services:
 ```
 
 ::: tip Note
-Executing invalidate in code does **not** clear any caches that are using `cache.backend.permanent_database`. 
+Executing invalidate in code does **not** clear any caches that are using `cache.backend.permanent_database`.
 :::
 
 ** Some items to be aware of **
@@ -743,13 +821,22 @@ Executing invalidate in code does **not** clear any caches that are using `cache
 
 ### Disable caching and enable TWIG debugging
 
-Generally I enable twig debugging and disable caching while developing a site.  This means I don't have to do a `drush cr` each time I make a change to a template file.
+Generally, I enable twig debugging and disable caching while developing a site.  This means I don't have to do a `drush cr` each time I make a change to a template file.
 
-To enable TWIG debugging output in source, in `sites/default/development.services.yml` set `twig.config debug:true`.  See `core.services.yml` for lots of other items to change for development.
+The easy way to disable caching and enable twig debugging is to navigate to `/admin/config/development/settings` (in the menus: config, development settings) where you can click checkboxes:
+* Do not cache markup
+* Twig development mode
+* Twig debug mode
+* Disable Twig cache
 
-::: tip Note
-You can rather navigate to `/admin/config/development/settings` where you can click checkboxes in the Drupal admin u/i.  This is much quicker and easier.
-:::
+
+
+The old way of editing the `settings.php` file and adding a `development.services.yml` file is outlined below as there is some useful info there.
+
+You can enable `TWIG debugging output` in source, in `sites/default/development.services.yml` by setting `twig.config debug:true`.  Don't create `development.services.yml` from scratch. It already exists under `/sites` so you can copy it from there.
+
+See `core.services.yml` for lots of other items to change for development.
+
 
 TWIG debugging output looks like this:
 
@@ -812,7 +899,7 @@ parameters:
     #
     # Not recommended in production environments
     # @default null
-    #    auto_reload: null
+    # auto_reload: null
     auto_reload: true
     # Twig cache:
     #
@@ -830,7 +917,7 @@ services:
     class: Drupal\Core\Cache\NullBackendFactory
 ```
 
-You need to enable your `development.services.yml` file so add this to your `settings.local.php`:
+You will need to let Drupal know about an additional `services.yml` file called: `development.services.yml`, so add this to your `settings.local.php`:
 
 ```php
 /**
@@ -839,7 +926,7 @@ You need to enable your `development.services.yml` file so add this to your `set
 $settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml';
 ```
 
-You also need to disable caches and JS/CSS preprocessing in `settings.local.php` with: 
+To disable caches and JS/CSS preprocessing in `settings.local.php`: 
 
 ```php
 $config['system.performance']['css']['preprocess'] = FALSE;
@@ -875,7 +962,7 @@ This will include the local settings file as part of Drupal's settings file.
 $settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml';
 ```
 
-By default `development.services.yml` contains the settings to disable Drupal caching:
+By default, `development.services.yml` contains the settings to disable Drupal caching:
 
 ```yml
 services:
@@ -916,7 +1003,7 @@ parameters:
 If the `parameters` block is already present in `sites/development.services.yml`, append the `twig.config` block to it.
 :::
 
-Rebuild the Drupal cache with `drush cr` otherwise your website will encounter an unexpected error on page reload.
+Rebuild the Drupal cache with `drush cr`, otherwise, your website will encounter an unexpected error on page reload.
 
 Here is the entire `development.services.yml` file that I usually use:
 
@@ -957,7 +1044,7 @@ parameters:
     #
     # Not recommended in production environments
     # @default null
-    #    auto_reload: null
+    # auto_reload: null
     auto_reload: true
     # Twig cache:
     #
@@ -975,15 +1062,267 @@ services:
     class: Drupal\Core\Cache\NullBackendFactory
 ```
 
+## Memcache/Memcached
+
+`memcached` (with a “d”) is the Linux daemon or server process that actually stores keys in RAM.
+
+Drupal’s [memcache module](https://www.drupal.org/project/memcache) provides the integration layer that lets Drupal use the `memcached` daemon for Cache API, locks, etc. It can work with either PHP of the PHP extensions `memcache` or `memcached`. Read [Memcache on Drupal.org - updated Apr 2025](https://www.drupal.org/docs/extending-drupal/contributed-modules/contributed-modules/memcache)
+
+
+
+
+### Configure Memcache for development
+
+To install Memcached in DDEV, use the [instructions on Github](https://github.com/ddev/ddev-memcached) or run:
+
+```bash
+ddev add-on get ddev/ddev-memcached
+```
+
+Add these settings to `web/sites/default/settings.php` to identify which bins are using Memcached:
+
+```php
+//Memcache settings
+$settings['memcache']['servers'] = ['memcached:11211' => 'default'];
+$settings['memcache']['bins'] = ['default' => 'default'];
+// For multisite installations, you can use a key prefix to avoid cache collisions.
+// This is useful if you have multiple sites using the same Memcached server.
+$settings['memcache']['key_prefix'] = 'abc_';
+$settings['cache']['default'] = 'cache.backend.memcache';
+// $settings['cache']['bins']['render'] = 'cache.backend.memcache';
+$settings['cache']['bins']['bootstrap'] = 'cache.backend.database';
+$settings['cache']['bins']['config'] = 'cache.backend.database';
+$settings['cache']['bins']['dynamic_page_cache'] = 'cache.backend.memcache';
+$settings['cache']['bins']['page'] = 'cache.backend.memcache';
+$settings['memcache']['cache_lifetime'] = 3600; // Set a longer cache lifetime (e.g., 1 hour)
+```
+
+Also, add this at the end of  `drupal/web/sites/default/services.yml` and for each multisite installation in `drupal/web/sites/abc/services.yml`
+
+Be sure to indent 2 spaces as this is a child of ‘parameters’:
+
+```yml
+services:
+ # Replaces the default lock backend with a memcache implementation.
+ lock:
+   class: Drupal\Core\Lock\LockBackendInterface
+   factory: memcache.lock.factory:get
+```
+
+If you enable the `memcache_admin` module and you can see statistics at reports, memcache statistics or `/admin/reports/memcache`. 
+
+
+### Talk directly to Memcache
+
+Use `nc` (netcat) to issue commands to Memcache e.g. `ddev exec 'echo "stats" | nc memcached 11211'`. This will show you the stats of the memcached server.
+
+Alternatively, ssh into the ddev container and run `nc`.  You can then run `stats` to see the stats of the memcached server.:
+
+```bash
+ddev ssh
+nc memcached 11211
+stats
+```
+
+It outputs something like:
+
+```
+STAT pid 1
+STAT uptime 92744
+STAT time 1757702625
+STAT version 1.6.39
+STAT libevent 2.1.12-stable
+STAT pointer_size 64
+STAT rusage_user 87.722401
+STAT rusage_system 65.974062
+STAT max_connections 1024
+STAT curr_connections 2
+STAT total_connections 319
+STAT rejected_connections 0
+STAT connection_structures 7
+STAT response_obj_oom 0
+STAT response_obj_count 1
+STAT response_obj_bytes 65536
+STAT read_buf_count 448
+STAT read_buf_bytes 7340032
+STAT read_buf_bytes_free 7258112
+STAT read_buf_oom 0
+STAT reserved_fds 20
+STAT cmd_get 221930
+STAT cmd_set 154065
+STAT cmd_flush 0
+STAT cmd_touch 0
+STAT cmd_meta 0
+STAT get_hits 198497
+STAT get_misses 23433
+STAT get_expired 0
+STAT get_flushed 0
+STAT delete_misses 6581
+STAT delete_hits 1524
+STAT incr_misses 0
+STAT incr_hits 0
+STAT decr_misses 0
+STAT decr_hits 0
+STAT cas_misses 0
+STAT cas_hits 0
+STAT cas_badval 0
+STAT touch_hits 0
+STAT touch_misses 0
+STAT store_too_large 23
+STAT store_no_memory 0
+STAT auth_cmds 0
+STAT auth_errors 0
+STAT bytes_read 716302004
+STAT bytes_written 945069722
+STAT limit_maxbytes 134217728
+STAT accepting_conns 1
+STAT listen_disabled_num 0
+STAT time_in_listen_disabled_us 0
+STAT threads 4
+STAT conn_yields 0
+STAT hash_power_level 16
+STAT hash_bytes 524288
+STAT hash_is_expanding 0
+STAT slab_reassign_rescues 110
+STAT slab_reassign_chunk_rescues 0
+STAT slab_reassign_inline_reclaim 454
+STAT slab_reassign_busy_items 38
+STAT slab_reassign_busy_deletes 0
+STAT slab_reassign_busy_nomem 38
+STAT slab_reassign_running 0
+STAT slabs_moved 1
+STAT lru_crawler_running 0
+STAT lru_crawler_starts 55
+STAT lru_maintainer_juggles 3139714
+STAT malloc_fails 0
+STAT log_worker_dropped 0
+STAT log_worker_written 0
+STAT log_watcher_skipped 0
+STAT log_watcher_sent 0
+STAT log_watchers 0
+STAT unexpected_napi_ids 0
+STAT round_robin_fallback 0
+STAT bytes 98878719
+STAT curr_items 21433
+STAT total_items 154175
+STAT slab_global_page_pool 0
+STAT expired_unfetched 0
+STAT evicted_unfetched 865
+STAT evicted_active 0
+STAT evictions 1025
+STAT reclaimed 0
+STAT crawler_reclaimed 0
+STAT crawler_items_checked 481538
+STAT lrutail_reflocked 18
+STAT moves_to_cold 125050
+STAT moves_to_warm 27342
+STAT moves_within_lru 8459
+STAT direct_reclaims 467
+STAT lru_bumps_dropped 0
+END
+```
+
+
+
+Or to view specific commands:
+
+```bash
+ddev exec 'echo "stats" | nc memcached 11211 | egrep "cmd_get|cmd_set"'
+```
+
+
+
+
+Additional interesting commands you can run:
+
+`curr_items` — number of items currently in cache. If it suddenly drops to near zero, the cache was likely flushed.
+
+`uptime` — if this is small, Memcached was restarted (which also clears the cache).
+
+`cmd_flush` — number of times the flush_all command has been issued since startup. If this increments, someone just cleared the cache. Sadly, `drush cr` doesn't do a flush_all, so this is not an indicator that the Drupal cache was rebuilt.
+
+
+```sh
+echo "stats" | nc memcached 11211 | grep curr_items
+STAT curr_items 20563
+```
+
+```sh
+echo "stats" | nc memcached 11211 | grep uptime
+STAT uptime 441973
+```
+
+```sh
+echo "stats" | nc memcached 11211 | grep cmd_flush
+STAT cmd_flush 0
+```
+
+### Memcache debug setting
+You can enable Memcache debug which will cause errors to be logged in watchdog:
+
+```php
+$settings['memcache']['debug'] = TRUE;
+```
+
+Now I get some interesting output:
+
+```sh
+ddev drush cr
+ [error]  MemcachedDriver::set() error key=acq_%3Aentity%3A-values%3Anode%3A31745 error=[37]ITEM TOO BIG
+```
+
+This was also logged in watchdog, indicating that node 31745 was too large to be cached:
+
+```
+MemcachedDriver::set() error key=acq_%3Aentity%3A-values%3Anode%3A31745 error=[37]ITEM TOO BIG
+```
+To check the settings for memcache, use:
+
+```sh
+ddev exec 'echo "stats settings" | nc memcached 11211 | egrep "maxbytes|item_size"'
+STAT maxbytes 134217728
+STAT item_size_max 1048576
+STAT ext_item_size 512
+```
+
+This explains that the maximum item size for memcache is set to 1MB (1048576 bytes), and the maximum total memory available for caching is set to 128MB (134217728 bytes). Since the node being cached exceeded the maximum item size, it could not be stored in memcache.
+
+### Which cache bins use memcache
+
+```php
+ddev drush php:eval 'foreach (\Drupal\Core\Cache\Cache::getBins() as $bin=>$b){echo "$bin => ".get_class($b).PHP_EOL;}'
+```
+
+Output:
+```
+static => Drupal\Core\Cache\MemoryBackend
+bootstrap => Drupal\Core\Cache\DatabaseBackend
+config => Drupal\Core\Cache\DatabaseBackend
+default => Drupal\memcache\MemcacheBackend
+entity => Drupal\memcache\MemcacheBackend
+menu => Drupal\memcache\MemcacheBackend
+render => Drupal\memcache\MemcacheBackend
+access_policy => Drupal\memcache\MemcacheBackend
+data => Drupal\memcache\MemcacheBackend
+discovery => Drupal\Core\Cache\ChainedFastBackend
+dynamic_page_cache => Drupal\memcache\MemcacheBackend
+feeds_download => Drupal\memcache\MemcacheBackend
+page => Drupal\memcache\MemcacheBackend
+site_settings => Drupal\memcache\MemcacheBackend
+toolbar => Drupal\memcache\MemcacheBackend
+signal => Drupal\memcache\MemcacheBackend
+ultimate_cron_logger => Drupal\memcache\MemcacheBackend
+```
+
 ## How to specify the cache backend for Memcache, Redis or APCu
 
-This is relevant for using [Memcache](https://www.drupal.org/project/memcache), [Redis](https://www.drupal.org/project/redis) and also [APCu](https://www.php.net/manual/en/book.apcu.php).  By default, Drupal caches information in the database.  Tables includes `cache_default`, `cache_render`, `cache_page`, `cache_config` etc.  By using the configuration below, Drupal can instead store this info in memory to increase performance.
+This is relevant for using [Memcache](https://www.drupal.org/project/memcache), [Redis](https://www.drupal.org/project/redis) and also [APCu](https://www.php.net/manual/en/book.apcu.php). By default, Drupal caches information in the database. Tables include `cache_default`, `cache_render`, `cache_page`, `cache_config`, etc.  By using the configuration below, Drupal can instead store this info in memory to increase performance.
 
-Drupal will no longer automatically use the custom global cache backend specified in `$settings['cache']['default']` in `settings.php` on certain specific cache bins that define their own `default_backend` in their service definition. In order to override the default backend, a line must be added explicitly to `settings.php` for each specific bin that provides a `default_backend`. This change has no effect for users that do not use a custom cache backend configuration like Redis or Memcache, and makes it possible to remove workarounds that were previously necessary to keep using the default fast chained backend for some cache bins defined in Drupal core.
+Drupal will no longer automatically use the custom global cache backend specified in `$settings['cache']['default']` in `settings.php` on certain specific cache bins that define their own `default_backend` in their service definition. In order to override the default backend, a line must be added explicitly to `settings.php` for each specific bin that provides a `default_backend`. This change has no effect for users that do not use a custom cache backend configuration like Redis or Memcache, and makes it possible to remove workarounds that were previously necessary to keep using the default fast-chained backend for some cache bins defined in Drupal core.
 
 **Detailed description with examples**
 
-In modern Drupal there are several ways to specify which cache backend is used for a certain cache bin (e.g. the `discovery` cache bin or the `render` cache bin).
+In modern Drupal, there are several ways to specify which cache backend is used for a certain cache bin (e.g. the `discovery` cache bin or the `render` cache bin).
 
 In Drupal, cache bins are defined as services and are tagged with name: `cache.bin`. Additionally, some cache bins specify a `default_backend` service within the tags. For example, the discovery cache bin from Drupal core defines a fast chained default backend:
 
@@ -1014,9 +1353,9 @@ This was changed to:
 * If not found, then use the `default_backend` from the tag in the service definition.
 * If no `default_backend` for the specific bin was provided, then use the global default defined in settings. I.e., `$settings['cache']['default']`
 
-The old order resulted in unexpected behaviors, for example, the fast chained backend was no longer used when an alternative cache backend was set as default.
+The old order resulted in unexpected behaviors, for example, the fast-chained backend was no longer used when an alternative cache backend was set as default.
 
-The order has been changed, so that the cache bin services that explicitly set `default_backends` are always used unless explicitly overridden with a per-bin configuration. In core, this means, fast chained backend will be used for `bootstrap`, `config`, and `discovery` cache bins and `memory` backend will be used for the `static` cache bin, unless they are explicitly overridden in settings.
+The order has been changed so that the cache bin services that explicitly set `default_backends` are always used unless explicitly overridden with a per-bin configuration. In core, this means, fast-chained backend will be used for `bootstrap`, `config`, and `discovery` cache bins and `memory` backend will be used for the `static` cache bin, unless they are explicitly overridden in settings.
 
 For example, to ensure Redis is used for all cache bins, before 8.2.0, the following configuration would have been enough:
 
@@ -1047,7 +1386,7 @@ Fabian Franz in [his article](https://drupalsun.com/fabianx/2015/12/01/day-1-twe
  ```
 
 ::: warning
-Proceed with caution with the above as it seems that APCu may only suitable for single server setups. TODO: I couldn't find any references to using APCu with multi-server setups so I'm not sure if that is a safe configuration. 
+Proceed with caution with the above as it seems that APCu may only be suitable for single-server setups. TODO: I couldn't find any references to using APCu with multi-server setups, so I'm not sure if that is a safe configuration. 
 :::
 
 **Pantheon and Redis or APCu**
@@ -1134,8 +1473,7 @@ More [at Drupalize.me](https://drupalize.me/tutorial/clear-drupals-cache)
 
 ## Using cache tags with reverse proxies
 
-
-More [about cache tags on drupal.org](https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags)
+More [about cache tags on drupal.org updated July 2024](https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags)
 
 Rather than caching responses in Drupal and invalidating them with cache tags, you could also cache responses in reverse proxies (Varnish, CDN …) and then invalidate responses they have cached using cache tags associated with those responses. To allow those reverse proxies to know which cache tags are associated with each response, you can send the cache tags along with a header.
 
@@ -1143,37 +1481,65 @@ Just like Drupal can send an `X-Drupal-Cache-Tags` header for debugging, it can 
 
 As a rule of thumb, it's recommended that both your web server and your reverse proxy support response headers with values of up to 16 KB.
 
-1. HTTP is text-based. Cache tags are therefore also text-based. Reverse proxies are free to represent cache tags in a different data structure internally. The 16 KB response header value limit was selected based on 2 factors: A) to ensure it works for the 99% case, B) what is practically achievable. Typical web servers (Apache) and typical CDNs (Fastly) support 16 KB response header values. This means roughly 1000 cache tags, which is enough for the 99% case.
+1. HTTP is text-based. Cache tags are therefore also text-based. Reverse proxies are free to represent cache tags in a different data structure internally. The 16 KB response header value limit was selected based on 2 factors: A) to ensure it works for the 99% case, B) what is practically achievable. Typical web servers (Apache) and typical CDNs (e.g. Fastly) support 16 KB response header values. This means roughly 1000 cache tags, which is enough for 99% of cases.
 2. The number of cache tags varies widely by site and the specific response. If it's a response that depends on many other things, there will be many cache tags. More than 1000 cache tags on a response will be rare.
 3. But, of course, this guideline (~1000 tags/response is sufficient) may and will evolve over time, as we A) see more real-world applications use it, B) see systems specifically leverage/build on top of this capability.
 
-Finally, anything beyond 1000 cache tags probably indicates a deeper problem: that the response is overly complex, that it should be split up. Nothing prevents you going beyond that number in Drupal, but it may require manual fine-tuning which is acceptable for such extremely complex use cases. Arguably, that's the case even for far less than 1000 cache tags.
+Finally, anything beyond 1000 cache tags probably indicates a deeper problem: that the response is overly complex, that it should be split up. Nothing prevents you from going beyond that number in Drupal, but it may require manual fine-tuning which is acceptable for such extremely complex use cases. Arguably, that's the case even for far less than 1000 cache tags.
 
-Read [some details about using cache tags with Varnish on drupal.org - updated July 2023](https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags-varnish)
+Read [some details about using cache tags with Varnish (including varnish purger and some VCL) on drupal.org - updated Sep 2024](https://www.drupal.org/docs/drupal-apis/cache-api/cache-tags-varnish)
 Also check out [Configuring Varnish for Drupal](https://www.varnish-software.com/developers/tutorials/configuring-varnish-drupal/)
 
-Here are links to some CDN's implementations of tag-based invalidation:
+Here are links to some CDNs' implementations of tag-based invalidation:
 - [CloudFlare](https://developers.cloudflare.com/cache/how-to/purge-cache)
 - [Fastly](https://www.fastly.com/documentation/reference/api/#purge_077dfb4aa07f49792b13c87647415537)
 - [KeyCDN](https://www.keycdn.com/api#purge-zone-tag)
 - [Akamai](https://techdocs.akamai.com/purge-cache/reference/api#concepts)
 
 
+## List cache bins
+```sh
+ddev drush php:eval 'echo implode("\n", array_keys(\Drupal\Core\Cache\Cache::getBins()));'
+```
+
+Outputs something like:
+
+```
+static
+bootstrap
+config
+default
+entity
+menu
+render
+access_policy
+data
+discovery
+dynamic_page_cache
+feeds_download
+page
+site_settings
+toolbar
+signal
+ultimate_cron_logger
+```
+
+
 ## class ChainedFastBackend
 
-Drupal has a [ChainedFastBackend](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Cache%21ChainedFastBackend.php/class/ChainedFastBackend/10) as the default cache backend, which allows to store data directly on the web server while ensuring it is correctly synchronized across multiple servers. APCu is the user cache portion of APC (Advanced PHP Cache), which has served us well till PHP 5.5 got its own zend opcache. You can think of it as a key-value store that is stored in memory and the basic operations are `apc_store($key, $data)`, `apc_fetch($keys)` and `apc_delete($keys)`. 
+Drupal has a [ChainedFastBackend](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Cache%21ChainedFastBackend.php/class/ChainedFastBackend/10) as the default cache backend, which allows for storing data directly on the web server while ensuring it is correctly synchronized across multiple servers. APCu is the user cache portion of APC (Advanced PHP Cache), which has served us well till PHP 5.5 got its own Zend Opcache. You can think of it as a key-value store that is stored in memory and the basic operations are `apc_store($key, $data)`, `apc_fetch($keys)` and `apc_delete($keys)`. 
 
-ChainedFastBackend defines a backend with a fast and a consistent backend chain.
+ChainedFastBackend defines a backend with a fast and consistent backend chain.
 
-In order to mitigate a network roundtrip for each cache get operation, this cache allows a fast backend to be put in front of a slow(er) backend. Typically, the fast backend will be something like `APCu`, and be bound to a single web node, and will not require a network round trip to fetch a cache item. The fast backend will also typically be inconsistent (will only see changes from one web node). The slower backend will be something like Mysql, Memcached or Redis, and will be used by all web nodes, thus making it consistent, but also require a network round trip for each cache get.
+In order to mitigate a network round-trip for each cache get operation, this cache allows a fast backend to be put in front of a slow(er) backend. Typically, the fast backend will be something like `APCu`, and be bound to a single web node, and will not require a network round-trip to fetch a cache item. The fast backend will also typically be inconsistent (will only see changes from one web node). The slower backend will be something like MySQL, Memcached or Redis, and will be used by all web nodes, thus making it consistent, but also requiring a network round-trip for each cache get.
 
 In addition to being useful for sites running on multiple web nodes, this backend can also be useful for sites running on a single web node where the fast backend (e.g., APCu) isn't shareable between the web and CLI processes. Single-node configurations that don't have that limitation can just use the fast cache backend directly.
 
-We always use the fast backend when reading (`get()`) entries from cache, but check whether they were created before the last write (`set()`) to this (chained) cache backend. Those cache entries that were created before the last write are discarded, but we use their cache IDs to then read them from the consistent (slower) cache backend instead; at the same time we update the fast cache backend so that the next read will hit the faster backend again. Hence we can guarantee that the cache entries we return are all up-to-date, and maximally exploit the faster cache backend. This cache backend uses and maintains a "last write timestamp" to determine which cache entries should be discarded.
+We always use the fast backend when reading (`get()`) entries from cache, but check whether they were created before the last write (`set()`) to this (chained) cache backend. Those cache entries that were created before the last write are discarded, but we use their cache IDs to then read them from the consistent (slower) cache backend instead; at the same time we update the fast cache backend so that the next read will hit the faster backend again. Hence, we can guarantee that the cache entries we return are all up-to-date, and maximally exploit the faster cache backend. This cache backend uses and maintains a "last write timestamp" to determine which cache entries should be discarded.
 
 Because this backend will mark all the cache entries in a bin as out-dated for each write to a bin, it is best suited to bins with fewer changes.
 
-Note that this is designed specifically for combining a fast inconsistent cache backend with a slower consistent cache back-end. To still function correctly, it needs to do a consistency check (see the \"last write timestamp\" logic). This contrasts with `\Drupal\Core\Cache\BackendChain`, which assumes both chained cache backends are consistent, thus a consistency check being pointless.  See [class ChainedFastBackend API docs on drupal.org](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Cache%21ChainedFastBackend.php/class/ChainedFastBackend/10)
+Note that this is designed specifically for combining a fast, inconsistent cache backend with a slower, consistent cache back-end. To still function correctly, it needs to do a consistency check (see the \"last write timestamp\" logic). This contrasts with `\Drupal\Core\Cache\BackendChain`, which assumes both chained cache backends are consistent, thus a consistency check is pointless.  See [class ChainedFastBackend API docs on drupal.org](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Cache%21ChainedFastBackend.php/class/ChainedFastBackend/10)
 
 ## APCu
 
@@ -1197,13 +1563,13 @@ A `cache.backend.chainedfast` service that combines APCu availability detection,
 
 A `default_backend` service tag (the value of which can be set to a backend service name, such as `cache.backend.chainedfast`) that module developers can assign to cache bin services to identify bins that are good candidates for specialized cache backends.
 
-The above tag assigned to the `cache.bootstrap`, `cache.config`, and `cache.discovery` bin services.
+The above tag is assigned to the `cache.bootstrap`, `cache.config`, and `cache.discovery` bin services.
 
 This means that by default (on a site with nothing set for `$settings['cache']` in `settings.php`), the bootstrap, config, and discovery cache bins automatically benefit from `APCu` caching if `APCu` is available, and this is compatible with Drush usage (e.g., Drush can be used to clear caches and the web process receives that cache clear) and multi-server deployments.
 
-`APCu` will act as a very fast local cache for all requests. Other cache backends can act as bigger, more general cache backend that is consistent across processes or servers.
+`APCu` will act as a very fast local cache for all requests. Other cache backends can act as a bigger, more general cache backend that is consistent across processes or servers.
 
-## Cache friendly progress meter
+## Cache-friendly progress meter
 
 As part of this [article by Dustin LeBlanc on performance optimization - April 2024](https://capellic.com/blog/frontend-performance-optimization-drupal-websites-part-1) by Capellic, Dustin suggests refactoring the progress meter to allow cacheability of the page.
 
@@ -1218,9 +1584,9 @@ As part of this [article by Dustin LeBlanc on performance optimization - April 2
 ```
 
 
-In this Javascript, you can see we’re making a request to a custom API endpoint, and then modifying the count in the dom after the page load. This means the page itself can be served from the cache, regardless of what is happening with form submissions. If we take a look at the controller behind that api endpoint, we can see that it also caches the responses, but on its own schedule which is controllable from an admin configuration form to tune the feedback cycle for immediacy or performance:
+In this JavaScript, you can see we’re making a request to a custom API endpoint, and then modifying the count in the DOM after the page load. This means the page itself can be served from the cache, regardless of what is happening with form submissions. If we take a look at the controller behind that api endpoint, we can see that it also caches the responses, but on its own schedule which is controllable from an admin configuration form to tune the feedback cycle for immediacy or performance:
 
-The Javascript code:
+The JavaScript code:
 ```js
 (function (once) {
   Drupal.behaviors.quickActionProgressMeter = {
@@ -1237,7 +1603,7 @@ The Javascript code:
               const progress = Math.round((count / goal) * 100);
               element.querySelector('.action-meter__progress-bar').style.width = `${progress}%`;
               element.querySelector('.action-meter__submissions').dataset.count = count;
-              // set the inner html to a comma formatted number using Intl.NumberFormat e.g 1,000,000
+              // set the inner HTML to a comma-formatted number using Intl.NumberFormat e.g 1,000,000
               element.querySelector('.action-meter__submissions').innerHTML = new Intl.NumberFormat().format(count);
             });
         });
@@ -1397,14 +1763,14 @@ The Internal page cache caches up pages for use by anonymous users. Pages reques
 The Dynamic page cache is used to cache pages minus the personalized parts, and is therefore useful for all users (both anonymous & authenticated). Dynamic page cache requires no configuration. The module uses the metadata (cache contexts) of all the components on a page to figure out if it can be cached. This core module\'s machine name is `dynamic_page_cache`. It was previously known as `Smart Cache`.
 
 Read [more about the Internal Page Cache on drupal.org updated November 2023](https://www.drupal.org/docs/administering-a-drupal-site/internal-page-cache)
-Also for more on [Dynamic page cache on drupal.org](https://www.drupal.org/docs/8/core/modules/dynamic-page-cache/overview)
+Also, for more on [Dynamic page cache on drupal.org](https://www.drupal.org/docs/8/core/modules/dynamic-page-cache/overview)
 
 
 
 
 ### Cache tags
 
-Cache tags are for dependencies on data that are managed by Drupal, and are the easiest way to control cache. For example, if we have a news story content type and a block that shows a list of three nodes on the homepage. How would the homepage cache (or more specifically the news block cache) be cleared if we changed one of the news stories?  The answer is cache tags.
+Cache tags are for dependencies on data that are managed by Drupal, and are the easiest way to control cache. For example, if we have a news story content type and a block that shows a list of three nodes on the homepage. How would the homepage cache (or more specifically, the news block cache) be cleared if we changed one of the news stories?  The answer is cache tags.
 
 Cache tags are strings that are passed around in sets (order doesn't matter), so they are typehinted to string[]. They're sets because a single cache item can depend on (or be invalidated by) many cache tags.
 
@@ -1413,13 +1779,13 @@ By convention, they are of the form `thing:identifier` — and when there's no c
 **Some examples:**
 - `node:5` — cache tag for Node id 5
 - `user:3` — cache tag for User id 3
-- `node_list` — list cache tag for Node entities (invalidated whenever any Node entity is updated, deleted or created, i.e., when a listing of nodes may need to change). Applicable to any entity type in following format: `{entity_type}_list`.
-- `node_list:article` — list cache tag for the article content type (or bundle). Applicable to any entity + bundle type in following format: `{entity_type}_list:{bundle}`.
+- `node_list` — list cache tag for Node entities (invalidated whenever any Node entity is updated, deleted or created, i.e., when a listing of nodes may need to change). Applicable to any entity type in the following format: `{entity_type}_list`.
+- `node_list:article` — list cache tag for the article content type (or bundle). Applicable to any entity + bundle type in the following format: `{entity_type}_list:{bundle}`.
 - `config:node_type_list` — list cache tag for Node type entities (invalidated whenever any **content types** are updated, deleted or created). Applicable to any entity type in the following format: config:`{entity_bundle_type}_list`.
 `config:system.performance` — cache tag for the `system.performance` configuration
 `library_info` — cache tag for asset libraries
 
-The data that Drupal manages fall in 3 categories:
+The data that Drupal manages falls into 3 categories:
 
 1. `entities` — these have cache tags of the form `<entity type ID>:<entity ID>` as well as `<entity type ID>_list` and `<entity type ID>_list:<bundle>` to invalidate lists of entities. Config entity types use the cache tag of the underlying configuration object.
 2. `configuration` — these have cache tags of the form config:`<configuration name>`.
@@ -1431,7 +1797,7 @@ Although many entity types follow a predictable cache tag format of `<entity typ
 
 In addition, it may be necessary to invalidate listings-based caches that depend on data from the entity in question e.g., refreshing the rendered HTML for a listing when a new entity for it is created. This can be done using `EntityTypeInterface::getListCacheTags()`, then invalidating anything returned by that method along with the entity's own tag(s). Entities with bundles also automatically have a more specific cache tag that includes their bundle, to allow for more targeted invalidation of lists.
 
-You can define more specific custom cache tags based on values that entities have, for example a term reference field for lists that show entities that have a certain term. Invalidation for such tags can be put in custom presave/delete entity hooks:
+You can define more specific custom cache tags based on values that entities have, for example, a term reference field for lists that show entities that have a certain term. Invalidation for such tags can be put in custom presave/delete entity hooks:
 
 ```php
 function yourmodule_node_presave(NodeInterface $node) {
@@ -1449,7 +1815,7 @@ function yourmodule_node_presave(NodeInterface $node) {
 These tags can then be used in code and in views using the [Views Custom Cache Tag module](https://www.drupal.org/project/views_custom_cache_tag).  Also check out the [Handy cache tags module](https://www.drupal.org/project/handy_cache_tags) which provides some handy extra cache tags, so you can, for example, tag a block that deals with a certain node type, with the cache tag of that node type.
 
 ::: tip Note
-There is currently no API to get per-bundle and more specific cache tags from an entity or other object. That is because it is not the entity that decided which list cache tags are relevant for a certain list/query, that depends on the query itself. Future Drupal core versions will likely improve out of the box support for per-bundle cache tags and for example integrate them into the entity query builder and views.
+There is currently no API to get per-bundle and more specific cache tags from an entity or other object. That is because it is not the entity that decides which list cache tags are relevant for a certain list/query, that depends on the query itself. Future Drupal core versions will likely improve out-of-the-box support for per-bundle cache tags and, for example, integrate them into the entity query builder and views.
 :::
 
 
@@ -1641,9 +2007,19 @@ You can see which cache contexts a certain page varies by and which cache tags i
 
 ![Cache contexts in Chrome](/images/cache-contexts1.png)
 
-Here is a screen shot of cache tags
+Here is a screenshot of cache tags (X-Drupal-Cache-Tags) in Chrome:
 
 ![Cache tags in Chrome](/images/cache-tags1.png)
+
+::: tip Note
+If you don't see the headers, they may be disabled in your `sites/development.services.yml`  or `sites/default/default.services.yml` file.  You can enable them by setting `response.add_cache_metadata_headers: true` in either file.
+```yaml
+parameters:
+  http.response.debug_cacheability_headers: true
+```
+See [Debugging Cache Tags](#debugging-cache-tags) for more information.
+:::
+
 
 Read more about [Cacheability of render arrays on drupal.org - updated April 2023](https://www.drupal.org/docs/drupal-apis/render-api/cacheability-of-render-arrays)
 
@@ -1657,11 +2033,11 @@ Whenever you are generating a render array, use the following 5 steps:
 
 3.  Does the representation of the thing I'm rendering vary per combination of permissions, per URL, per interface language, per ... something? Those are the cache contexts. Note: cache contexts are completely analogous to HTTP's Vary header.
 
-4.  What causes the representation of the thing I'm rendering become outdated? I.e., which things does it depend upon, so that when those things change, so should my representation? Those are the cache tags.
+4.  What causes the representation of the thing I'm rendering to become outdated? I.e., which things does it depend upon, so that when those things change, so should my representation? Those are the cache tags.
 
 5.  When does the representation of the thing I'm rendering become outdated? I.e., is the data valid for a limited period of time only? That is the max-age (maximum age). It defaults to "permanently (forever) cacheable" (`Cache::PERMANENT`). When the representation is only valid for a limited time, set a `max-age`, expressed in seconds. Zero means that it's not cacheable at all.
 
-Cache contexts, tags and max-age must always be set, because they affect the cacheability of the entire response. Therefore they "bubble" and parents automatically receive them.
+Cache contexts, tags and max-age must always be set, because they affect the cacheability of the entire response. Therefore, they "bubble" and parents automatically receive them.
 
 Cache keys must only be set if the render array should be cached.
 
@@ -1677,7 +2053,7 @@ When you request a cache object, you can specify the bin name in your call to \D
 Other common cache bins are the following:
 
 `bootstrap`: Data needed from the beginning to the end of most requests, that has a very strict limit on variations and is invalidated rarely.
-`render`: Contains cached HTML strings like cached pages and blocks, can grow to large size.
+`render`: Contains cached HTML strings like cached pages and blocks, can grow to a large size.
 `data`: Contains data that can vary by path or similar context.
 `discovery`: Contains cached discovery data for things such as plugins, views_data, or YAML discovered data such as library info.
 

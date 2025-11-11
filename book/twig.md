@@ -16,7 +16,7 @@ over the appearance of the site, which includes both the markup and the
 CSS used to style the markup. For this system to work, instead of
 writing HTML markup directly, modules return render arrays, which
 are structured hierarchical arrays that include the data to be rendered
-into HTML, and options that affect the markup. Render arrays are
+into HTML and options that affect the markup. Render arrays are
 ultimately rendered into HTML or other output formats by recursive calls
 to [\\Drupal\\Core\\Render\\RendererInterface::render](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Render%21RendererInterface.php/function/RendererInterface%3A%3Arender/10)(), traversing the depth of the render array hierarchy. At each level, the
 theme system is invoked to do the actual rendering. See the Drupal API documentation
@@ -25,7 +25,7 @@ more information about render arrays and rendering.
 
 ### Twig Templating Engine
 
-Drupal uses the Twig templating engine. Twig offers developers a fast,secure, and flexible method for building templates for Drupal sites. Twig does not require front-end developers to know PHP to build and manipulate Drupal themes.
+Drupal uses the Twig templating engine. Twig offers developers a fast, secure, and flexible method for building templates for Drupal sites. Twig does not require front-end developers to know PHP to build and manipulate Drupal themes.
 
 For more info on theming Drupal, read [Theming Drupal on Drupal.org](https://www.drupal.org/docs/theming-drupal) and the [Twig documentation](https://twig.symfony.com/doc/3.x)
 
@@ -71,15 +71,15 @@ And even more Twig fun at <https://twig.symfony.com/doc/3.x/functions/index.html
 
 ### Which template, which variables?
 
-There is usually one `page.html.twig` and _multiple_ node templates. One node template per content type. Eg. `node-news-story.html.twig`, `node-event.html.twig`. There can also be field specific templates e.g. `web/themes/custom/txg/templates/field/field--field-3-column-links.html.twig`
+There is usually one `page.html.twig` and _multiple_ node templates. One node template per content type. E.g., `node-news-story.html.twig`, `node-event.html.twig`. There can also be field-specific templates e.g. `web/themes/custom/txg/templates/field/field--field-3-column-links.html.twig`
 
 In the `page.html.twig`, you can refer to variables as `page.content` or `node.label`
 
 whereas node templates expect `content.field_image` or `node.field_myfield`
 
-Note. If you don't see a field output for a node, try specifying the preface `node.` instead of `content.`.
+Note, if you don't see a field output for a node, try specifying the preface `node.` instead of `content.`.
 
-Field specific template are usually very simple and refer to
+Field-specific templates are usually very simple and refer to
 
 ```twig
 {{ items }}
@@ -125,7 +125,7 @@ And from `txg/web/themes/custom/txg/templates/content/page--node--event.html.twi
 
 Here is the same basic stuff (as above) but implemented in the node template at `txg/web/themes/custom/txg/templates/content/node--event.html.twig`:
 
-> Note. That `node.label` becomes `label` and `node.field_for` becomes `content.field_for`.
+> Note that `node.label` becomes `label` and `node.field_for` becomes `content.field_for`.
 
 ```twig
 <h1>{{ label }}</h1>
@@ -166,7 +166,7 @@ Render node title (or label) (with markup -- so it may include \<span\> tags)
 {{ label }}
 ```
 
-Render node label (without markup -- no html in this version)
+Render node label (without markup -- no HTML in this version)
 
 ```twig
 {{ node.label }}
@@ -186,7 +186,7 @@ Render link to node
 
 ### Fields
 
-There are many ways to limit things and only show some of the content. Mostly often you will need to show specific fields. Note. This will include rendered info such as labels etc.
+There are many ways to limit things and only show some of the content. Most often you will need to show specific fields. Note, this will include rendered info such as labels, etc.
 
 ```twig
 {{ content.field_yomama }}
@@ -204,7 +204,7 @@ Any field -- just jam `content.` in front of it
 {{ content.field_intl_students_and_scholars }}
 ```
 
-You can also grab node specific fields if `content.` type fields don't do the trick.
+You can also grab node-specific fields if `content.` type fields don't do the trick.
 
 In a node template, you can display specific node fields by prefacing them with `node` e.g.:
 
@@ -217,21 +217,21 @@ In a node template, you can display specific node fields by prefacing them with 
 
 ### Paragraph fields
 
-These still work fine: `content.field_abc` or `node.field_ref_topic` but instead of `node`, you preface fields with `paragraph` like this:
+These still work fine: `content.field_abc` or `node.field_ref_topic` but instead of `node`, you preface fields with `paragraph`. Note, paragraphs always need to have a number to specify which item you are referring to.
 
 ```twig
 termid0: {{ paragraph.field_ref_tax.0.target_id }}
 termid1: {{ paragraph.field_ref_tax.1.target_id }}
 ```
 
-and we get this result if we have selected two terms 13 and 16.
+and we get this result if we have selected two terms, 13 and 16.
 
 ```
 termid0: 13
 termid1: 16
 ```
 
-To dump a taxonomy reference field for debugging purposes use the code below. The pre tags format it a little nicer than if we don't have them.
+To dump a taxonomy reference field for debugging purposes, use the code below. The pre tags format it a little nicer than if we don't have them.
 
 ```twig
 <pre>
@@ -275,6 +275,33 @@ params: {{ params }}
 
 This will output something like: `5+6+19`
 
+### File fields in a paragraph
+
+To display a link to a file field in a paragraph, use the following. Note, this isn't a media field.
+
+```twig
+{% if paragraph.field_qrl_pdf_file.value %}
+  <a href="{{ paragraph.field_qrl_pdf_file.0.entity.uri.value|file_url }}">
+    {{ paragraph.field_qrl_pdf_file.0.entity.filename.value }}
+  </a>
+{% endif %}
+```
+
+You can also loop through the values with:
+
+```twig
+{% for file in paragraph.field_qrl_pdf_file %}
+  <a href="{{ file.entity.uri.value|file_url }}" target="_blank">
+    {{ file.entity.filename.value }}
+  </a>
+{% endfor %}
+```
+::: tip Note
+The `|` symbol is a Twig filter operator that applies a filter to a variable or expression. The `file_url` Twig filter converts the file\'s URI into a publicly accessible URL for the `<a>` tag\'s `href` attribute.
+:::
+
+
+
 ### Body
 
 ```twig
@@ -303,8 +330,8 @@ Fields that you preface with `node.` can also handle an index (the `0` below) i.
 
 ### Fields with HTML
 
-If a field has html that you want rendered, use the keyword raw. Be
-aware this has security considerations which you can mitigate using
+If a field has HTML that you want rendered, use the keyword raw. Be
+aware that this has security considerations which you can mitigate using
 [striptags](https://twig.symfony.com/doc/3.x/filters/striptags.html)
 filters:
 
@@ -324,9 +351,9 @@ Or several tags. In this case `<b>`, `<a>` and `<pre>`:
 {{ word|striptags('<b>,<a>,<pre>')|raw }}
 ```
 
-### The date/time a node is published, updated or created
+### The date/time a node is published, updated, or created
 
-Each of these calls return a `datetime` value in string form which can be
+Each of these calls returns a `datetime` value in string form, which can be
 massaged by the twig `date()` function for formatting.
 
 ```twig
@@ -479,12 +506,12 @@ If you have an entity reference field such as `field_ref_topic` (entity referenc
 {{ node.field_ref_topic.1.target_id }}
 ```
 
-Note. This will show the node id of the entity reference field. See below to see the content that the entity reference field points to.
+Note, this will show the node id of the entity reference field. See below to see the content that the entity reference field points to.
 
 
 ### Entity reference destination content
 
-If you have an entity reference and you want to display the content from the node that is referenced i.e. if you have a contract with a reference to the vendor node and you want to display information from the vendor node on the contract you can dereference fields in the entity destination:
+If you have an entity reference and you want to display the content from the node that is referenced i.e., if you have a contract with a reference to the vendor node and you want to display information from the vendor node on the contract, you can dereference fields in the entity destination:
 
 From `dirt/web/themes/custom/dirt_bootstrap/templates/content/node--contract--vendor-list.html.twig`:
 
@@ -519,6 +546,44 @@ Dump category: {{ dump(node.field_ref_tax.entity.label) }}
 </pre>
 ```
 
+### Boolean field
+
+To process a boolean field `field_ts_wrap`, you need to access the `[#items].0.value` as shown below. Here we check for a positive value.
+
+```twig
+  {% if content.field_ts_wrap['#items'].0.value %}
+      {# This will output the "on" or "off" label values defined in the field #}
+      {{ content.field_ts_wrap }}
+  {% endif %}
+```
+
+For negative values, use `not`:
+
+```twig
+{% if not content.field_ts_wrap['#items'].0.value %}
+  {# The boolean field is FALSE #}
+{% endif %}
+```
+
+To use the logical value of the boolean field to affect the class of a div, use the following:
+
+```twig
+    {% if content.field_ts_right_text %}
+      {% if content.field_ts_wrap['#items'].0.value %}
+        <div class="right wrap">
+          {{ content.field_ts_right_text }}
+        </div>
+      {% else %}
+        <div class="right">
+          {{ content.field_ts_right_text }}
+        </div>
+      {% endif %}
+    {% endif %}
+```
+
+
+
+
 ### Render a block
 
 Example block with a machine name of `block---system-powered-by-block.html.twig` from a custom theme
@@ -542,6 +607,43 @@ Example block with a machine name of `block---system-powered-by-block.html.twig`
   {% endblock %}
 </div>
 ```
+
+### Render paragraphs in a block
+
+Here we have a field in the block called `field_clp_links` which is a reference to a paragraph. We can render the paragraph in the block template using the following code.  Each item is a `<li>` in an `<ul>` list. Notice we extract the `#items` from the field.  Each `#item` represents a paragraph and we use the `|view` filter to render the paragraph. In this case, we also have a template for the paragraph which lays out the contents of the paragraph the way we want it.
+
+```twig
+  {% if content.field_clp_links %}
+    <ul class="clp-links">
+      {% for item in content.field_clp_links['#items'] %}
+        {{ dump(item) }}
+        <li>{{ item.entity|view }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+```
+
+
+
+
+### Render block fields
+
+While block content is rendered with `{{ content }}` you can also render specific fields in the block. For example, to render the fields `field_clp1_heading` and `field_clp1_description`, use:
+
+
+```twig
+  {% if content.field_clp1_heading %}
+    <h1>{{ content.field_clp1_heading }}</h1>
+  {% endif %}
+
+  {% if content.field_clp1_description %}
+    <div class="usa-accordion__content">
+      {{ content.field_clp1_description }}
+    </div>
+  {% endif %}
+```
+
+
 
 ### Render an array as an OL list created in the template_preprocess_node()
 
@@ -585,7 +687,7 @@ And output the link without a label.
 {{ content.field_suggest_button }}
 ```
 
-If you need a little more control you might use this version which allows classes etc. We are adding several classes onto the anchor to make it look like a button. In this case with an internal link, it shows up using the alias of the link i.e. it shows `/contracts` instead of `node/7` when you hover over the link.
+If you need a little more control, you might use this version which allows classes etc. We are adding several classes to the anchor to make it look like a button. In this case, with an internal link, it shows up using the alias of the link i.e. it shows `/contracts` instead of `node/7` when you hover over the link.
 
 ```twig
 <p><a class="btn secondary navy centered" href="{{ node.field_suggest_button.0.url }}">{{ node.field_suggest_button.0.title }}</a></p>
@@ -641,7 +743,7 @@ You can link to users using the following:
 
 Here we have a node with an entity reference field (`field_sf_contract_ref`) to another entity.
 
-In a preprocess function, you can grab the link. Note, you can just grab the `first()` one. Later on you can see that in the twig template, you can specify the first one with `.0`
+In a preprocess function, you can grab the link. Note, you can just grab the `first()` one. Later on, you can see that in the twig template, you can specify the first one with `.0`
 
 From dirt/web/themes/custom/dirt_bootstrap/dirt_bootstrap.theme
 
@@ -655,7 +757,7 @@ if ($vendor_url) {
 }
 ```
 
-And in the template we retrieve the URI with `.uri`:
+And in the template, we retrieve the URI with `.uri`:
 
 ```twig
 <p><a class="styled-link ext" href="{{ node.field_sf_contract_ref.entity.field_vendor_url.uri }}">Vendor Website</a></p>
@@ -681,7 +783,7 @@ From
 ```
 
 And from
-`~/Sites/txg/web/themes/custom/txg/templates/content/node--event--card.html.twig` if there is a url, display the link with the url, otherwise just display the title for the link. I'm not 100% sure this is really valid. Can you put in a title and no link?
+`~/Sites/txg/web/themes/custom/txg/templates/content/node--event--card.html.twig` if there is a URL, display the link with the URL, otherwise just display the title for the link. I'm not 100% sure this is really valid. Can you put in a title and no link?
 
 ```twig
 {% if node.field_event_location_link.0.url %}
@@ -691,9 +793,9 @@ And from
 {% endif %}
 ```
 
-### Render an internal link programatically
+### Render an internal link programmatically
 
-Here we want to render an internal link to a page on our Drupal site (as opposed to a link to another site.) We grab the link in a preprocess function. Extract out the title and the URI.
+Here we want to render an internal link to a page on our Drupal site (as opposed to a link to another site). We grab the link in a preprocess function. Extract out the title and the URI.
 
 ```php
 $instructions_node = Node::load($order_type_instructions_nid);
@@ -716,6 +818,37 @@ We can put the pieces in the twig template like this
 
 <a href="{{ order_type_link }}">{{ order_link_title }}</a>
 
+```
+
+### Test a link for a value
+
+You can test for a link's value using the following:
+
+```twig
+{% if content.field_link.0['#url'] %}
+  <a href="{{ content.field_link.0['#url'] }}">{{ content.field_link.0['#title'] }}</a>
+{% endif %}
+```
+
+Or
+
+```twig
+      {% if content.field_ts_left_link[0]['#url'] is not empty %}
+        <div class="left">
+          {{ content.field_ts_left_link }}
+        </div>
+      {% elseif content.field_ts_left_text %}
+        <div class="left">
+          {{ content.field_ts_left_text }}
+        </div>
+      {% endif %}
+```
+
+::: tip Note
+You can specify the first item in an array with `.0` or `[0]` e.g.
+```twig
+    {% if content.field_ts_left_link[0]['#url'] is not empty %}
+    {% if content.field_ts_left_link.0['#url'] is not empty %}
 ```
 
 ### Render an image with an image style
@@ -777,7 +910,7 @@ Elements in HTML have **attributes**; these are additional values that configur
 
 Read more about using attributes in templates on Drupal.org - updated Mar 2023](https://www.drupal.org/docs/8/theming-drupal-8/using-attributes-in-templates)
 
-To add a data attribute use:
+To add a data attribute, use:
 
 ```twig
 {{ attributes.setAttribute('data-myname','tommy') }}
@@ -804,7 +937,7 @@ Produces:
 ></article>
 ```
 
-For more examples see [Using attributes in templates on drupal.org - updated Mar 2023](https://www.drupal.org/docs/8/theming-drupal-8/using-attributes-in-templates) such as:
+For more examples, see [Using attributes in templates on drupal.org - updated Mar 2023](https://www.drupal.org/docs/8/theming-drupal-8/using-attributes-in-templates) such as:
 
 ```twig
 {% set classes = ['red', 'green', 'blue'] %}
@@ -890,7 +1023,7 @@ Here we set a bunch of classes:
 ```
 
 This line uses a ternary operator to check if the `view_mode` variable is set. If `view_mode` is set (truthy), it appends a class to the paragraph that includes the view mode's machine name, formatted with the clean_class filter. The `clean_class` filter is used to ensure that the class name is safe to use in HTML (e.g., spaces are replaced with dashes, and unsafe characters are removed):
-  
+
 ```twig
 view_mode ? 'paragraph--view-mode--' ~ view_mode|clean_class,
 ```
@@ -938,7 +1071,7 @@ Absolute:
 <a href="{{ url('entity.node.canonical', {node: 3223}) }}">Link to WEA node 3223 </a>
 ```
 
-Relative (see path vs url):
+Relative (see path vs URL):
 
 ```twig
 <a href="{{ path('entity.node.canonical', {node: 3223}) }}">Link to WEA node 3223 </a>
@@ -969,7 +1102,7 @@ Notice the use of `loop.index` to only output this for the first item (and skip 
 
 ### Loop thru an array of items with a separator
 
-This loads all the authors and adds `and` between them except for the last one:
+This loads all the authors and adds `and` between them, except for the last one:
 
 ```twig
 <div>
@@ -1010,6 +1143,38 @@ From
     {% endfor %}
 {% endif %}
 ```
+## Adding templates to a Custom Theme
+
+You can add custom Twig templates to a custom Theme. This can be useful in order to ensure separation of concerns. For example, if you had a module that sends emails to users, instead of having the email body text in the module code it can be abstracted out to a twig template.
+
+```php
+        $render_array = [
+          '#theme' => 'mail__user',
+          '#user' => $user,
+          '#baseurl' => $baseurl,
+          '#hash' => $hash,
+        ];
+        $email_body = \Drupal::service('renderer')->renderPlain($render_array);
+```
+
+Then create the twig file `templates\mail__user.tpl.php`
+
+This file can contain the variables defined in the render array
+
+```twig
+<p>
+	Welcome $user
+</p>
+<hr>
+<p>
+	No longer want to receive these emails?
+	<a href="{{ baseurl }}/unsubscribe/{{ hash }}">Unsubscribe</a>
+</p>
+```
+
+After clearing caches the value of `$email_body` should now be the contents of `templates\mail__user.tpl.php`.
+
+Note that for simplicity's sake, this example uses a static service call to `\Drupal::service('renderer')` which is not the best practice. It is better to use [dependency injection](services#using-dependency-injection-in-blocks) whenever possible.
 
 
 ## Adding Regions to a Theme
@@ -1081,7 +1246,7 @@ Then each region can be referenced in the `page.html.twig` template file:
 ```
 
 
-## Add Javascript into a twig template
+## Add JavaScript into a twig template
 
 ```twig
 <script>
@@ -1236,7 +1401,7 @@ e.g. from `~/Sites/inside-marthe/themes/custom/dp/templates/paragraph/paragraph-
 
 From `~/Sites/inside-marthe/themes/custom/dp/templates/content/node--video-collection.html.twig`:
 
-Normally you wouldn't need the striptags, but when twig debugging is enabled, the render information includes debug tags. See https://www.drupal.org/project/drupal/issues/2547559#comment-12103048
+Normally, you wouldn't need the striptags, but when twig debugging is enabled, the render information includes debug tags. See https://www.drupal.org/project/drupal/issues/2547559#comment-12103048
 
 ```twig
 {% if content.field_related_lessons|render|striptags|trim is not empty %}
@@ -1307,11 +1472,11 @@ To use a field value in a view as an argument, using
 {{ drupal_view('map_data_for_a_country', 'block_stats', node.field_iso_n3_country_code.0.value) }}
 ```
 
-> Note. Using content.field as a parameter doesn't work because
+> Note, using content.field as a parameter doesn't work because
 > content.fields get rendered so they are usually filled with HTML or
 > labels or both. Parameters need to simply be numbers or strings.
 
-Other examples. Here an entity reference field is passed as a parameter. This works for taxonomy terms like this also.
+Other examples. Here, an entity reference field is passed as a parameter. This works for taxonomy terms like this also.
 
 ```twig
 {{ drupal_view('news_stories_for_a_topic','block_1', node.field_ref_topic.0.target_id) }}
@@ -1323,7 +1488,7 @@ Or
 {{ drupal_view('resellers_for_this_vendor', 'embed_1', node.field_vendor_id.value ) }}
 ```
 
-Note. If you ever see a 502 bad gateway error when embedding a drupal_view, delete the display and create a new one and it may just work fine.
+Note, if you ever see a 502 bad gateway error when embedding a `drupal_view`, delete the display and create a new one and it may just work fine.
 
 ### Count how many rows returned from a view
 
@@ -1338,7 +1503,7 @@ Check if View has Results
 {% endif %}
 ```
 
-### If view results empty, show a different view
+### If view results are empty, show a different view
 
 In `~/Sites/txg/web/themes/custom/txg/templates/content/node--news-story.html.twig` we show units (the first view) but if there aren't any, show `aofs` (the second view.)
 
@@ -1358,7 +1523,7 @@ From: <https://drupal.stackexchange.com/questions/78701/views-multiple-contextua
 
 Instead of Content: The name of Taxonomy (`taxonomy_vocabulary_#`) you need to select `Content: Has taxonomy term ID _Contextual filter_` and enable `_Allow multiple values_` to able to use multiple values in the form of `1+2+3` (for `OR`) or `1,2,3` (for `AND`).
 
-Then in the template, check if there is a second value and build the arguments in the form `id+id` (e.g. `13+16`) In this example, I have to assume the setup allows only 2 taxonomy terms to be entered. See below for an unlimited amount of terms.
+Then, in the template, check if there is a second value and build the arguments in the form `id+id` (e.g. `13+16`). In this example, I have to assume the setup allows only 2 taxonomy terms to be entered. See below for an unlimited amount of terms.
 
 From
 `~/Sites/dirt/web/themes/custom/dirt_bootstrap/templates/paragraphs/paragraph--upcoming-events.html.twig`:
@@ -1431,7 +1596,7 @@ e.g. `~/Sites/dirt/web/themes/custom/dirt_bootstrap/templates/views/views-view-l
 
 ### Inject variables
 
-You can inject variables into a view using `hook_preprocess_views_view`() eg. from `~/Sites/txg/web/themes/custom/txg/txg.theme`. The code below used to was load up various items to populate the select dropdown controls in the view:
+You can inject variables into a view using `hook_preprocess_views_view`() e.g., from `~/Sites/txg/web/themes/custom/txg/txg.theme`. The code below is used to load up various items to populate the select dropdown controls in the view:
 
 ```php
 function txg_preprocess_views_view(&$variables) {
@@ -1499,7 +1664,7 @@ function generate_search_filter_data() {
       "title" => $term->name,
     ];
   }
-  // Update the select to show the current value from the url.
+  // Update the select to show the current value from the URL.
   foreach ($storage as &$item) {
     if ($item['value'] == $topic_tid) {
       $item['selected'] = 'selected';
@@ -1521,7 +1686,7 @@ function generate_search_filter_data() {
     ['title' => 'Oceania', 'value' => 'Oceania'],
     ['title' => 'South America', 'value' => 'south%20america'],
   ];
-  // Update the select to show the current value from the url.
+  // Update the select to show the current value from the URL.
   foreach ($continents as &$continent) {
     if (!empty($continent_arg)) {
       if (strtolower($continent['title']) == strtolower($continent_arg)) {
@@ -1571,9 +1736,9 @@ Here the output for all views uses the `views-view.html.twig` template
 <!-- BEGIN OUTPUT from 'core/themes/classy/templates/views/views-view.html.twig' -->
 ```
 
-If we want to override the `frontpage` view we can copy the template from above to our theme and rename it `views-view--frontpage.html.twig`
+If we want to override the `frontpage` view, we can copy the template from above to our theme and rename it `views-view--frontpage.html.twig`
 
-Notice that it will override all displays (in this case the page and the `feed` displays -- "page_1" and "feed_1" respectively) so we can be more specific
+Notice that it will override all displays (in this case, the page and the `feed` displays -- "page_1" and "feed_1" respectively), so we can be more specific
 
 Rename it to `views-view--frontpage--page_1.html.twig`
 
@@ -1637,10 +1802,12 @@ function mytheme_preprocess_views_view_field(&$variables) {
 
 #### Same field used twice
 
-Note. If you use the same field twice in a view i.e. if you need to display different parts of the same field in different places, views names them something like this: `field_library_media` and `field_library_media_1`. In that circumstance, you have to refer to them in the function like this:
+Note, if you use the same field twice in a view i.e. if you need to display different parts of the same field in different places, views names them something like this: `field_library_media` and `field_library_media_1`. In that circumstance, you have to refer to them in the function like this:
 
+```php
 // if($variables['field']->field == 'field_library_media') {
-  if($variables['field']->options['id'] == 'field_library_media_1') {
+if($variables['field']->options['id'] == 'field_library_media_1') {
+```
 
 Here is a real example where a media field id is being displayed and I switch it out with the formatted size of the media file.
 
@@ -1686,7 +1853,7 @@ function dirt_bootstrap_preprocess_views_view_field(&$variables) {
 
 ### Concatenate values into a string with join
 
-This would typically be used when passing a series of node id\'s to a view to filter its output.
+This would typically be used when passing a series of node ids to a view to filter its output.
 
 ```twig
 {% set blah = [node.field_ref_unit.0.target_id,node.field_ref_unit.1.target_id,node.field_ref_unit.2.target_id,node.field_ref_unit.3.target_id]|join('+') %}
@@ -1734,7 +1901,32 @@ Here are some examples. A complete list is included below:
 {% endfilter %}
 ```
 
-Filters
+### Drupal Specific Filters
+These are declared in [TwigExtension::getFilters()](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Template%21TwigExtension.php/function/TwigExtension%3A%3AgetFilters/10).
+
+* `trans` - This filter (alternatively, `t`) will run the variable through the Drupal `t()` function, which will return a translated string. This filter should be used for any interface strings manually placed in the template that will appear for users.
+* `placeholder` - This filter escapes content to HTML and formats it using `drupal_placeholder()`, which makes it display as emphasized text.
+* `clean_class` - This filter prepares a string for use as a valid HTML class name. See [Html::getClass()](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Component%21Utility%21Html.php/function/Html%3A%3AgetClass/10)
+* `clean_id` - This filter prepares a string for use as a valid HTML ID. See [Html::getID()](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Component%21Utility%21Html.php/function/Html%3A%3AgetId/10)
+* `format_date` - This filter prepares a timestamp for use as a formatted date string. See [DateFormatter::format()](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Datetime%21DateFormatter.php/function/DateFormatter%3A%3Aformat/10)
+* `raw` - This filter should be avoided whenever possible, particularly if you're outputting data that could be user-entered. In Drupal 9 Twig 2, the `{% raw %}` tag is deprecated in favor of `{% verbatim %}`. (The `|raw` filter, on the other hand, is not deprecated.)
+* `render` - This filter is a wrapper for the `render()` function. It takes a render array and outputs rendered HTML markup. This can be useful if you want to apply an additional filter (such as stripping tags), or if you want to make a conditional based on the rendered output (for example, if you have a non-empty render array that returns an empty string). It can also be used on strings and certain objects, mainly those implementing the `toString()` method.
+* `safe_join` - The safe_join filter joins several strings together with a supplied separator. See [TwigExtension::safeJoin().](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Template%21TwigExtension.php/function/TwigExtension%3A%3AsafeJoin/10)
+* `without` - The without filter creates a copy of the renderable array and removes child elements by key specified through arguments passed to the filter. The copy can be printed without these elements. The original renderable array is still available and can be used to print child elements in their entirety in the twig template. You can pass a field or an array of fields. See [twig_without.](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Template%21TwigExtension.php/function/TwigExtension%3A%3AwithoutFilter/10)
+* `add_suggestion` - This filter allows adding a theme suggestion to a render array rendered with `#theme`. For example, if `content.body` has a render array with `'#theme' => 'field'`, using the `|add_suggestion` filter with the variable
+```twig
+{{ content.body|add_suggestion('details') }}
+```
+would allow loading a template `field--details.html.twig`. The theme suggestion added with `|add_suggestion` will have the highest priority and will take precedence over any pre-existing theme suggestions.
+
+* `clean_unique_id` - This can be used for getting a unique ID. The filter ensures that even if the template is rendered multiple times, the ID remains unique for each usage.
+* `add_class` - This allows for setting CSS classes on field render arrays.
+* `set_attribute` - This allows for setting HTML attributes on field render arrays.
+
+See examples of some of these at [Drupal Specific Filters](https://www.drupal.org/docs/develop/theming-drupal/twig-in-drupal/filters-modifying-variables-in-twig-templates#s-drupal-specific-filters) and [Drupal Theming Do's and Don'ts by  Don Lalicon - Dec 2023](https://evolvingweb.com/blog/drupal-theming-dos-and-donts)
+
+
+### List of Twig V3 Filters
 
 - [abs](https://twig.symfony.com/doc/3.x/filters/abs.html)
 - [batch](https://twig.symfony.com/doc/3.x/filters/batch.html)
@@ -1849,7 +2041,7 @@ to get:
 
 ### Display filter form block
 
-You can use this to display your ajax exposed filter form block:
+You can use this to display your AJAX-exposed filter form block:
 
 ```twig
     {{ drupal_block('views_exposed_filter_block:news_listing_for_news_landing-page_1') }}
@@ -1867,7 +2059,7 @@ In `~/Sites/inside-marthe/themes/custom/dprime/templates/content/node-overview.h
 </div>
 ```
 
-You can, also specify additional parameters which map to contextual
+You can also specify additional parameters which map to contextual
 filters you have configured in your view.
 
 ```twig
@@ -1988,7 +2180,7 @@ You also need this in `settings.local.php`:
 $settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml';
 ```
 
-You also need to disable the render cache in `settings.local.php`.  Here all caching is disabled  with:
+You also need to disable the render cache in `settings.local.php`. Here, all caching is disabled  with:
 
 ```php
 $config['system.performance']['css']['preprocess'] = FALSE;
@@ -2014,7 +2206,7 @@ Dump node.published_at.value:
 </pre>
 ```
 
-The output might look like this. Note the published value may be null as I didn't use Drupal scheduling to publish the node:
+The output might look like this. Note that the published value may be null, as I didn't use Drupal scheduling to publish the node:
 
 ```
 Dump node.created.value:
@@ -2037,7 +2229,7 @@ Here we dump a taxonomy reference field which is useful for debugging purposes. 
 </pre>
 ```
 
-And get ouput:
+And get output:
 
 ```
 array(2) {
@@ -2092,7 +2284,7 @@ array(2) {
 
 ### Using kint or dump to display variable in a template
 
-With `devel` and `devel: kint` enabled, you can display variables in templates. Here we show the content variable from the above block template. Note. There is also a built in `dump()` function which is super useful.
+With `devel` and `devel: kint` enabled, you can display variables in templates. Here we show the content variable from the above block template. Note, there is also a built-in `dump()` function which is super useful.
 
 ```twig
 {{ kint(content) }}
@@ -2136,7 +2328,7 @@ If you ever see a 502 bad gateway error when embedding a drupal_view, delete the
 
 When you care about the output being affected by twig debugging, you need to use `striptags`. In this case, because I enabled twig debugging, the `content.field_landing_opinion_page_type` was not ever `'ORD`'
 
-So here I compare a field value so I have to use striptags to remove all html. I ended up using the combination of `render|striptags|trim`:
+So here I compare a field value, so I have to use striptags to remove all HTML. I ended up using the combination of `render|striptags|trim`:
 
 ```twig
 {% if content.field_landing_opinion_page_type|render|striptags|trim == 'ORD' %}
@@ -2146,12 +2338,12 @@ So here I compare a field value so I have to use striptags to remove all html. I
 
 ### Xdebug in twig
 When you need to see the values of variables in your twig templates, with the devel module enabled, enable DDEV\'s Xdebug (`ddev xdebug on`) and add the following line to your twig template:
-  
+
 ```twig
 {{ devel_breakpoint() }}
 ```
 
-This will cause xdebug to stop in `docroot/modules/contrib/devel/src/Twig/Extension/Debug.php` at the `breakpoint()` function.  You can then easily look in the `$context` variable which holds everything that is available in the twig template. 
+This will cause Xdebug to stop in `docroot/modules/contrib/devel/src/Twig/Extension/Debug.php` at the `breakpoint()` function.  You can then easily look in the `$context` variable which holds everything that is available in the twig template.
 
 ![Xdebug in twig](/images/twig-xdebug.png)
 
@@ -2159,13 +2351,13 @@ This [Twig Xdebug contrib module](https://www.drupal.org/project/twig_xdebug) al
 ```twig
 {{ breakpoint() }}
 ```
-into your Twig template which will opens in a file outside your Twig template - `BreakpointExtension.php`. It won\'t actually open your Twig file but it will let you inspect all of the variables as if you were running Xdebug within the Twig template. The key values you'll see are:
+into your Twig template which will open in a file outside your Twig template - `BreakpointExtension.php`. It won\'t actually open your Twig file but it will let you inspect all of the variables as if you were running Xdebug within the Twig template. The key values you'll see are:
 
 `$context`: Variables available to use in the template.
 
 `$environment`: Information about the Twig environment, including available functions.
 
-`$arguments`: If you supply an argument to breakpoint it will be viewable here for example:
+`$arguments`: If you supply an argument to breakpoint, it will be viewable here for example:
 ```twig
 {{ breakpoint(fields) }}
 ```
@@ -2174,8 +2366,8 @@ into your Twig template which will opens in a file outside your Twig template - 
 
 More at [Debugging Twig Templates on drupal.org - updated Aug 2024](https://www.drupal.org/docs/develop/theming-drupal/twig-in-drupal/debugging-twig-templates)
 
-Also PHPStorm has the ability to step through twig templates just like PHP code. See the following useful links for more:
-- [Jetbrains help article on Debugging Twig templates](https://www.jetbrains.com/help/phpstorm/twig-templates-support.html#debugging-twig-templates) 
+Also, PHPStorm has the ability to step through twig templates just like PHP code. See the following useful links for more:
+- [Jetbrains help article on Debugging Twig templates](https://www.jetbrains.com/help/phpstorm/twig-templates-support.html#debugging-twig-templates)
 - [Jetbrains blog post on Twig debug support from May 2019](https://blog.jetbrains.com/phpstorm/2019/05/twig-and-blade-templates-debugging-2/)
 - [Jetbrains article from 2019](https://blog.jetbrains.com/phpstorm/2019/01/phpstorm-2019-1-early-access-program-is-open/#twig_debug_support)
 
@@ -2187,10 +2379,67 @@ Also PHPStorm has the ability to step through twig templates just like PHP code.
 Drupal 10 uses [Twig 3](https://twig.symfony.com/doc/3.x/). Drupal 9 uses Twig 2. Drupal 8 used Twig 1.
 
 
+## Specify Twig cache directory
+
+To specify the twig cache directory, you can set the `twig.config` in your `sites/default/settings.php` or `sites/default/settings.local.php` file. Clearing Drupal caches will then cause the twig cache files to appear in `sites/default/files/php/twig` when you load pages in the browser.
+
+```php
+$settings['php_storage']['twig']['directory'] = dirname(__DIR__, 3) . '/web/sites/default/files/php';
+//print_r($settings['php_storage']['twig']['directory']);
+//die();
+```
+If you are running multisite, you can specify a different directory for each site as:
+
+
+```php
+// For the abc site.
+$settings['php_storage']['twig']['directory'] = dirname(__DIR__, 3) . '/web/sites/abc/files/php';
+```
+
+The contents of the twig cache directory look something like this.  You can always delete the twig directory and Drupal will recreate it:
+
+```bash
+$ ls -al web/sites/default/files/php/twig/
+total 24
+drwxrwxrwx 32 selwyn dialout  1024 Aug  7 14:43 .
+drwxrwxrwx  3 selwyn dialout    96 Aug  7 14:38 ..
+-rw-r--r--  1 selwyn dialout 18436 Aug  7 14:40 .DS_Store
+-r--r--r--  1 selwyn dialout   685 Aug  7 14:38 .htaccess
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e___string_template__f49880_NN_VMPzsk0fsIHKEI9ntPhwsq
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_block--page-title-block.h_tgfz4c4juxnpD4aDVTBlWsaqb
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_block.html.twig_x8I-oVYvpbDWQ4QuF0y-PVkMw
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_breadcrumb.html.twig_46abLa0hhdTWd_3Y92yEOycnx
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_container.html.twig_H9qkHFmVke5GYDAqw4xmUwQ4b
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_footer.html.twig_YXh4ZmpsCPcoGYx3jBR6NBMo3
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_form-element-label--caac-_vKCEAg2x3sckyUCQlN7yPSRdG
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_form-element-label.html.t_bhKzqtX13io4wng6iHZuMo3Mn
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_form-element.html.twig_gx-A3PbkJvKcdmimZLNKuuwC9
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_form.html.twig_xsfOfFTGWQArRagKJW7EHZx3t
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_government-banner.html.tw_71SdxmgeUrnzA9BMu48Qr74C8
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_html.html.twig_YJjFlo-mqfDxoipte7J3Yf1lU
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_input--radio.html.twig_moOIP56AHVKkirr26fxKFKNpc
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_input.html.twig_z-DdRSH9bO8WMtdNNjd5H5glm
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_item-list.html.twig_j-IVqZN2vwfekqprXiPJh8VT6
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_off-canvas-page-wrapper.h_Sfa9f9uqatnN4fGvquqWz5bDB
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_page-title.html.twig_7hcSrBU6D9mNy6WCofuOILHF_
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_page.html.twig_CZvIobjLdhd9jI82rTu1wtAap
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_radios.html.twig_jStGtr0jfVqcJagtvzRGR7uAO
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region--content.html.twig_P6_FGT8769z_SeL38LgUIGlSr
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region--footer_menu.html._RexhRvp4G0glvRy3cVhpQOIYW
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region--header.html.twig_sT119pFu7PogXBWCQXLOH85hA
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region--help.html.twig_GCPomffNUsVQbUKXB6GEO_Idx
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region--highlighted.html._oBVV2IAEEOEHWSVb7x0q5QPPj
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region--primary_menu.html_1dB2Q--GbFz93Vf340JAYI3ZE
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_region.html.twig_iez0n3XOxqTFJs8McJ5jgkPJc
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_status-messages.html.twig_-TqTFKSSgM289iZbJ0klYKBbo
+drwxrwxrwx  4 selwyn dialout   128 Aug  7 14:43 6895015c75e2e_table.html.twig_j7SPBo5ZGJUR7L8CRxWbq5eea
+```
+
 
 ## Reference
 
 - [Theme system overview on api.drupal.org](https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Render%21theme.api.php/group/themeable/10)
+- [Drupal Theming Do's and Don'ts by  Don Lalicon - Dec 2023](https://evolvingweb.com/blog/drupal-theming-dos-and-donts)
 - [Twig 3 documentation](https://twig.symfony.com/doc/3.x/)
 - [Drupal.org Theming documentation](https://www.drupal.org/docs/theming-drupal)
 - [Handy Twig functions you can use directly in templates - Updated Jan 2023](https://www.drupal.org/docs/theming-drupal/twig-in-drupal/functions-in-twig-templates)

@@ -7,23 +7,27 @@ title: Actions
 
 ## Overview
 
-The Actions module is a core module in Modern Drupal that allows site builders and developers to create automated workflows by defining actions and triggers. In Drupal, actions refer to a set of tasks or operations that can be performed on a site. For example, an action can be sending an email, publishing content, or updating a database record. 
+TL;DR: The Actions module provides a powerful and flexible way to automate tasks on your website by defining actions and triggers, allowing you to create customized workflows that improve your site's functionality and user experience. - ChatGPT (with minor tweaks on my part.)
+
+
+:::tip Note
+The core `actions_ui` module [has been deprecated](https://www.drupal.org/node/3425074) and will be removed in Drupal 11. It is possible to enable this module to view and create actions, but getting them to fire is a little more challenging. Core actions are however, still available and can be used with either the [Rules module](https://www.drupal.org/project/rules) or the [ECA module](https://www.drupal.org/project/eca), which can also use Drupal core\'s [events](events.md).
+:::
+
+The Actions module is a core module in Modern Drupal that allows site builders and developers to create automated workflows by defining actions and triggers. In Drupal, actions refer to a set of tasks or operations that can be performed on a site. For example, an action can be sending an email, publishing content, or updating a database record.
 
 With the Actions module, you can create a customized workflow that can be triggered by a specific event. For example, when a user submits a form on your website, you can trigger an action to send an email notification to the site administrator. You can also chain multiple actions together to create complex workflows.
 
 The Actions module provides a user-friendly interface for defining and managing actions. You can create custom actions using PHP code (see below) or use pre-defined actions provided by Drupal core or contributed modules. The module also provides a way to organize and categorize actions, making it easy to find and use them in your workflows.
 
-TL;DR: The Actions module provides a powerful and flexible way to automate tasks on your website by defining actions and triggers, allowing you to create customized workflows that improve your site's functionality and user experience. - ChatGPT (with minor tweaks on my part.)
 
-From the config page in Drupal: 
+From the config page in Drupal:
 >There are two types of actions: simple and advanced. Simple actions do not require any additional configuration and are listed here automatically. Advanced actions need to be created and configured before they can be used because they have options that need to be specified; for example, sending an email to a specified address or unpublishing content containing certain words. To create an advanced action, select the action from the drop-down list in the advanced action section below and click the Create button.
 
-::: tip Note
-The [ECA module](https://www.drupal.org/project/eca) can use Drupal core actions (and events) if you need to do even more.
-:::
+
 
 ## Custom Actions
-Here, A Drupal action is a fuctionality which performs specific action when executed. For example, Archive Node or Make Content Sticky.
+Here, A Drupal action is a functionality which performs a specific action when executed. For example, Archive Node or Make Content Sticky.
 
 Actions use the annotation class `Drupal\Core\Annotation\Action`, and extend `Drupal\Core\Action\ActionBase` or `Drupal\Core\Action\ConfigurableActionBase` (if the action is configurable.)
 
@@ -49,7 +53,7 @@ Action Plugin definition is defined in Plugin Annotation. It has 3 required keys
 
 ## Archive Node Action (simple)
 
-This is a simple action which requires no configuration.  When it is run, it changes the alias of the node to `/archive/<year>/<old alias>`.  It also sets the title to have the word `Archive` in the front of it.  Finally it disables the sticky and promoted flags.  [It is also on gitlab here.](https://git.drupalcode.org/sandbox/Bhanu951-3103712/-/blob/8.x-dev/action_plugin_examples/src/Plugin/Action/ArchiveNode.php)
+This is a simple action which requires no configuration.  When it is run, it changes the alias of the node to `/archive/<year>/<old alias>`.  It also sets the title to have the word `Archive` in front of it. Finally, it disables the sticky and promoted flags.  [It is also on gitlab here.](https://git.drupalcode.org/sandbox/Bhanu951-3103712/-/blob/8.x-dev/action_plugin_examples/src/Plugin/Action/ArchiveNode.php)
 
 ```php
 <?php
@@ -180,7 +184,7 @@ Created Action Plugin can be viewed on the `/admin/content` page.
 
 ## Update Node Title Custom Action Plugin with Configuration
 
-This [example by Bhanu951 on Gitlab](https://git.drupalcode.org/sandbox/Bhanu951-3103712/-/blob/8.x-dev/action_plugin_examples/src/Plugin/Action/UpdateNodeTitle.php) updates a node title. It gets the new title info from configuration.  
+This [example by Bhanu951 on Gitlab](https://git.drupalcode.org/sandbox/Bhanu951-3103712/-/blob/8.x-dev/action_plugin_examples/src/Plugin/Action/UpdateNodeTitle.php) updates a node title. It gets the new title info from configuration.
 
 ```php
 <?php
@@ -332,7 +336,7 @@ configuration:
 ```
 
 :::tip Note
-You need to install the core module Actions first to be able to configure action plugins in UI.
+You need to enable the core module `Actions UI` to be able to configure action plugins in UI. It is deprecated and will be removed in Drupall 11. You can still use actions plugins in the [Rules](https://www.drupal.org/project/rules) or [ECA](https://www.drupal.org/project/eca) modules.
 :::
 
 Configuration Page `/admin/config/system/actions`
@@ -343,6 +347,7 @@ See the [change record: Actions are now plugins, configured actions are configur
 
 ## Reference
 
-* [Actions UI module overview updated January 2023](https://www.drupal.org/docs/8/core/modules/action/overview)
+* [Actions UI module overview updated April 2024](https://www.drupal.org/docs/8/core/modules/action/overview)
 * [Change Record - Actions are now plugins, configured actions are configuration entities](https://www.drupal.org/node/2020549)
 * [ECA: Event-Condition-Action - no-code solution to orchestrate your Drupal site](https://www.drupal.org/project/eca)
+* [Rules module](https://www.drupal.org/project/rules)

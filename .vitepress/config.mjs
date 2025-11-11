@@ -5,7 +5,7 @@ import { generateSidebar } from 'vitepress-sidebar';
 export default defineConfig({
   title: 'Drupal at your Fingertips',
   description:
-    'Drupal at your Fingertips: A developers quick reference for Drupal 9 and 10',
+    'Drupal at your Fingertips: A developers quick reference for Modern Drupal versions 10+',
   base: '/',
   srcDir: './book',
   outDir: './dist',
@@ -23,6 +23,9 @@ export default defineConfig({
     envDir: './../',
     ssr: {
       noExternal: ['@nolebase/vitepress-plugin-enhanced-readabilities'],
+    },
+    build: {
+      chunkSizeWarningLimit: 1500,
     },
   },
   themeConfig: {
@@ -55,16 +58,18 @@ export default defineConfig({
       useTitleFromFrontmatter: true,
       sortMenusByName: true,
       hyphenToSpace: true,
-      excludeFiles: [
+      excludePattern: [
         'about.md',
         'attribution.md',
         'mysteries.md',
         'contribute.md',
+        'layoutbuilder.md',
+        'decoupled.md'
       ],
     }),
 
     socialLinks: [
-      { icon: 'x', link: '//twitter.com/selwynpolit' },
+      { icon: 'x', link: '//x.com/selwynpolit' },
       { icon: 'github', link: '//github.com/selwynpolit' },
     ],
 
@@ -77,4 +82,9 @@ export default defineConfig({
         '  </a><br>Drupal is a registered trademark of Dries Buytaert</span>',
     },
   },
+  sitemap: {
+    hostname: 'https://www.drupalatyourfingertips.com',
+    lastmodDateOnly: false // Includes exact timestamps
+  },
 });
+

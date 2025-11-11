@@ -19,7 +19,7 @@ entity.file.collection:
 
 For my patch, I wanted to remove this section of the `file_entity.links.task.yml` file.
 
-First I get the repo/git version of the module:
+First, I get the repo/git version of the module:
 
 ```sh
 $ composer update drupal/file_entity --prefer-source
@@ -103,13 +103,15 @@ For more, see [Making a patch](https://www.drupal.org/node/707484).
 
 ## Patch modules using patches on Drupal.org
 
-Patches can be applied by referencing them in the composer.json file, in the following format. [cweagans/composer-patches](https://github.com/cweagans/composer-patches) can then be used to apply the patches on any subsequent website builds.
+Patches can be applied by referencing them in the `composer.json` file, in the following format. Use the [cweagans composer-patches project from github](https://github.com/cweagans/composer-patches) to apply patches on any subsequent website builds.
 
-In order to install and manage patches using composer we need to require the "composer-patches" module: 
+::: tip Note
+In order to install and manage patches using composer we need to require the "composer-patches" module:
 
 ```
 composer require cweagans/composer-patches
 ```
+:::
 
 
 Examples of patches to core look like:
@@ -150,10 +152,10 @@ Some developers like adding the actual link to the issue in the description like
 See [Drupal 9 and Composer Patches](https://vazcell.com/blog/how-apply-patch-drupal-9-composer)
 also [Managing patches with Composer](https://acquia.my.site.com/s/article/360048081193-Managing-patches-with-Composer)
 
-### Step by step 
+### Step by step
 
 1. Find the issue and patch in the issue queue on Drupal.org
-2. Use the title and ID of the issue to be able to locate this post in the future. E.g. [Using an issue for the Gin admin theme](https://www.drupal.org/project/gin/issues/3188521) "Improve content form detection - 3188521" 
+2. Use the title and ID of the issue to be able to locate this post in the future. E.g. [Using an issue for the Gin admin theme](https://www.drupal.org/project/gin/issues/3188521) "Improve content form detection - 3188521"
 3. Scroll down the issue to find the specific patch you want to apply e.g. for comment #8 grab the file link for `3188521-8.patch`.  It is [https://www.drupal.org/files/issues/2021-05-19/3188521-8.patch](https://www.drupal.org/files/issues/2021-05-19/3188521-8.patch)
 4. Add the module name, description and URL for the patch into the extra patches section of json:
 
@@ -172,25 +174,46 @@ also [Managing patches with Composer](https://acquia.my.site.com/s/article/36004
 ```
 5. use `composer update --lock` to apply the patch and watch the output.
 
-If the patch was not applied or throws an error which is quite common (because they are no longer compatible), try using `-vvv` (verbose mode) flag with composer to see the reason: 
+If the patch was not applied or throws an error which is quite common (because they are no longer compatible), try using `-vvv` (verbose mode) flag with composer to see the reason:
 
 ```
 composer update -vvv
 ```
 
-## Patches from a Gitlab merge request
+::: tip Note
+If you haven't already installed the [cweagans composer patches plugin](https://github.com/cweagans/composer-patches) use:
 
-Use this technique **at your peril!** 
+```
+composer require cweagans/composer-patches
+```
+:::
 
-A better process is to download the Merge request patch, and after reviewing carefully, apply it with `cweagans/composer-patches` with a local reference like: `patches/core-1234567-33.patch`.
+## Patches from a GitLab merge request
 
-Using the URL of the merge request, add `.patch` at the end of the URL and that will be the path to the latest patch.
+Be aware that this technique can be a source of security problems, so use it at your peril!
 
-e.g. for a merge request at [https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2](https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2) or [https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2/diffs?view=parallel](https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2/diffs?view=parallel)
+For local quick testing, you can use a patch from a merge request on GitLab like the following:
+
+```json
+    "extra": {
+        "patches": {
+            "drupal/viewsreference": {
+                "Update to 'autocompleteclose' event for autocomplete widget": "https://git.drupalcode.org/project/viewsreference/-/merge_requests/79.patch"
+            }
+        },
+```
+
+Make sure you have installed the `cweagans/composer-patches` package first otherwise
+
+A safer approach is to download a `merge request patch`, and after reviewing carefully, apply it locally after making sure you have installed the `cweagans/composer-patches` package.  In your `composer.json`, you can reference the local file with something like: `patches/core-1234567-33.patch` (and following the steps [above](#creating-a-local-patch-to-a-contrib-module)).
+
+Specify the URL of the merge request by adding `.patch` at the end of the MR URL and that will be the path to the latest patch. e.g. for a merge request at:
+* [https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2](https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2) or
+*  [https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2/diffs?view=parallel](https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2/diffs?view=parallel)
 
 The patch is at [https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2.patch](https://git.drupalcode.org/project/alt_stream_wrappers/-/merge_requests/2.patch)
 
-Note. The patch file itself may look a little different from what you may be accustomed to. In the example below, you may notice that there is a header with the commit message and author details before the patch itself actually begins. This is normal and the patch should still apply correctly.:
+Note, the patch files for MR\'s look a little different from most patch files you've seen. In the example below, you may notice that there is a header with the commit message and author details before the patch itself actually begins. This is normal and the patch should still apply correctly.:
 
 ```diff
 From a4edb6adc09abb1ca52e92d80111173bfa206132 Mon Sep 17 00:00:00 2001
@@ -214,14 +237,15 @@ index 0000000..a4f7c84
 
 
 ::: danger
-You should **not apply patches directly from Gitlab merge requests** for several reasons. 
-1. When the new drupal.org is released, issues will be moved to gitlab. These file urls will stop working at some point, and if they do your project won't build. Be future proof, use local patches.
+You should **not apply patches directly from GitLab merge requests** on production sites for several reasons.
+1. When the new drupal.org is released, issues will be moved to GitLab. These file urls will stop working at some point, and if they do your project won't build. Be future-proof, use local patches.
 2. New patches may be added to the merge request, and you won't know about them. They could be flawed or malicious which could break your site.
 3. Your composer install (or deployment) now depends on drupal.org. If you are building your site and drupal.org has a temporary outage, your deployment will fail.
+4. You are at the mercy of the patch author. They could change the patch at any time, and you won't know about it. This could introduce bad code and break your site.
 :::
 
 
-## composer.json patches in separate file
+## Put composer.json patches in a separate file
 
 To separate patches into a different file other than composer json add `"patches-file"` section under `"extra"`. See example below:
 
@@ -250,12 +274,21 @@ To separate patches into a different file other than composer json add `"patches
 }
 ```
 
+::: tip Note
+If you haven't already installed the [cweagans composer patches plugin](https://github.com/cweagans/composer-patches) use:
+
+```
+composer require cweagans/composer-patches
+```
+:::
+
+
 
 ### Troubleshoot Composer Patches
 
 If composer install fails, try `composer -vvv` for verbose output
 
-If the issue is that it can't find the file for example if it displays the following:
+If the issue is that it can't find the file, for example, if it displays the following:
 
 ```sh
   - Applying patches for drupal/addtocalendar
@@ -280,7 +313,7 @@ More at <https://github.com/cweagans/composer-patches/issues/146>
 
 ## Stop files being overwritten during composer operations
 
-Depending on your composer.json, files like development.services.yml may be overwritten from during scaffolding. To prevent certain scaffold files from being overwritten every time you run a Composer command you can specify them in the "extra" section of your project's composer.json. See the docs on Excluding scaffold files.
+Depending on your composer.json, files like development.services.yml may be overwritten during scaffolding. To prevent certain scaffold files from being overwritten every time you run a Composer command you can specify them in the "extra" section of your project's composer.json. See the docs on Excluding scaffold files.
 
 The following snippet prevents the development.services.yml from being regularly overwritten:
 ```json
@@ -433,7 +466,7 @@ Problem 1
 More at [https://www.drupal.org/project/drupal/releases/10.2.3](https://www.drupal.org/project/drupal/releases/10.2.3) and [Updating Drupal core via composer updated Dec 2023. ](https://www.drupal.org/docs/updating-drupal/updating-drupal-core-via-composer)
 
 
-## What are the dependencies?
+## How to identify dependencies
 
 To check why a project is included use `composer why` or `composer depends`.
 
@@ -487,7 +520,7 @@ Install the lenient endpoint:
 
 `composer config repositories.lenient composer https://packages.drupal.org/lenient `
 
-Your `composer.json` file will get this. notice the `lenient` key below:
+Your `composer.json` file will get this. Notice the `lenient` key below:
 
 ```json
     "repositories": {
@@ -502,7 +535,7 @@ Your `composer.json` file will get this. notice the `lenient` key below:
     },
 ```
 
-Specify which Drupal module that composer should be lenient with: 
+Specify which Drupal module that composer should be lenient with:
 
 `composer config --merge --json extra.drupal-lenient.allowed-list '["drupal/node_access_rebuild_progressive"]'`
 
@@ -514,7 +547,7 @@ And `composer.json` gets this added:
     }
 ```
 
-If you haven't already installed the [cweagans composer patches plugin](https://github.com/cweagans/composer-patches) use: 
+If you haven't already installed the [cweagans composer patches plugin](https://github.com/cweagans/composer-patches) use:
 
 ```
 composer require cweagans/composer-patches
@@ -552,7 +585,7 @@ index 45f7c8a41..d2fc50637 100644
 
 ```
 
-In composer.json add your patch as in below.  It is on [drupal.org](https://www.drupal.org/project/node_access_rebuild_progressive/issues/3288770#comment-15227586).
+In composer.json add your patch as below.  It is on [drupal.org](https://www.drupal.org/project/node_access_rebuild_progressive/issues/3288770#comment-15227586).
 
 ```json
     "extra": {
@@ -607,6 +640,12 @@ Install the module with:
 
 The module will be installed and the patch applied!
 
+::: tip Note
+This only works if you have already run composer install for the project.  If you have a completely new project, you need to rather remove references to the \"unsupported\" module(s) in the composer.json file and then run `composer install`.  After that, add them back in and `composer install` should work fine.
+:::
+
+
+
 More at
 - [Using Drupal's Lenient Composer Endpoint - Sep 2023](https://www.drupal.org/docs/develop/using-composer/using-drupals-lenient-composer-endpoint)
 - [Install a Contributed Module with No Drupal 9 Release - Feb 2023](https://drupalize.me/tutorial/install-contributed-module-no-drupal-9-release)
@@ -645,7 +684,7 @@ Notice the `require` key and the `config` key below
     },
 ```
 
-Specify which Drupal module that composer should be lenient with: 
+Specify which Drupal module that composer should be lenient with:
 
 ```
 composer config --merge --json extra.drupal-lenient.allowed-list '["drupal/node_access_rebuild_progressive"]'
@@ -658,7 +697,7 @@ And `composer.json` gets this added:
         }
 ```
 
-If you haven't already installed the [cweagans composer patches plugin](https://github.com/cweagans/composer-patches) use: 
+If you haven't already installed the [cweagans composer patches plugin](https://github.com/cweagans/composer-patches) use:
 
 ```
 composer require cweagans/composer-patches
@@ -802,7 +841,7 @@ Examples:
 
 ## Allowing multiple versions
 
-You can use double pipe (`||`) to specify multiple version. 
+You can use double pipe (`||`) to specify multiple versions.
 
 For the [CSV serialization](https://www.drupal.org/project/csv_serialization) module the author recommends using the following to install the module:
 ```
@@ -869,9 +908,103 @@ For more:
 
 
 
+## Including a git repo in composer.json
+
+When you want to include a repo in your project that does not define anything about itself with a `composer.json` file you must define it in your own `composer.json`. See the example:
+
+```json
+{
+  "name": "mynamespace/my-project-that-uses-composer",
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "mynamespace/my-custom-theme",
+        "version": "1.2.3",
+        "type": "drupal-theme",
+        "source": {
+          "url": "https://github.com/mynamespace/my-custom-theme.git",
+          "type": "git",
+          "reference": "master"
+        }
+      }
+    }
+  ],
+  "require": {
+    "mynamespace/my-custom-theme": "^1",
+    "composer/installers": "^2.0"
+  }
+}
+```
+
+More at [Use Composer to require Git repositories within PHP projects - May 2022](https://opensource.com/article/22/5/composer-git-repositories)
+
+
+Here is a real example from a Drupal project where `desandro/masonry` and `desandro/imagesloaded` are defined as packages in the `composer.json` file and then required in the `require` section:
+
+```json
+{
+    "name": "wcc/wcc-website",
+    "description": "Drupal website.",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://www.drupal.org/project/drupal",
+    "support": {
+        "docs": "https://www.drupal.org/docs/user_guide/en/index.html",
+        "chat": "https://www.drupal.org/node/314178"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "desandro/imagesloaded",
+                "version": "1.0",
+                "type": "drupal-library",
+                "source": {
+                    "url": "https://github.com/desandro/imagesloaded",
+                    "type": "git",
+                    "reference": "master"
+                },
+                "license": "MIT"
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "desandro/masonry",
+                "version": "1.0",
+                "type": "drupal-library",
+                "source": {
+                    "url": "https://github.com/desandro/masonry",
+                    "type": "git",
+                    "reference": "master"
+                },
+                "license": "MIT"
+            }
+        }
+    ],
+    "require": {
+        "acquia/drupal-environment-detector": "^1.6",
+        "composer/installers": "^2.0",
+        "cweagans/composer-patches": "^1.7",
+        "desandro/imagesloaded": "^1.0",
+        "desandro/masonry": "^1.0",
+        "drupal/accordion_blocks": "^2.0",
+        "drupal/acquia_search": "^3.1",
+        "drupal/addtocal_augment": "^1.1",
+        ...
+```
+
+
+
+
 ## Composer bump
 
-Composer 2.4 adds a new command called bump, that updates the requirements listed in the `composer.json` file with the currently installed version numbers. When the version numbers are bumped in the `composer.json` file, it effectively prevents Composer from installing a lower version of the required packages.  This can be useful when you have multiple people on a team who are updating composer and have to deal with version conflicts of the composer.lock file. See [php.watch article](https://php.watch/articles/composer-bump): 
+Composer 2.4 adds a new command called bump, that updates the requirements listed in the `composer.json` file with the currently installed version numbers. When the version numbers are bumped in the `composer.json` file, it effectively prevents Composer from installing a lower version of the required packages.  This can be useful when you have multiple people on a team who are updating composer and have to deal with version conflicts of the composer.lock file. See [php.watch article](https://php.watch/articles/composer-bump):
 
 To use the bump command with ddev, just run:
 
@@ -879,6 +1012,308 @@ To use the bump command with ddev, just run:
 ddev composer bump
 ./composer.json has been updated (46 changes).
 ```
+
+## Using the require-dev section in composer.json
+
+You will often need to install certain modules for a development environment but not install them on the production, staging or dev environments. Examples of these modules are: `devel`, `webprofiler`, `kint`, `devel_php`, `devel_generate`, `devel_reinstall`, `devel_entity_updates`, `devel_debug_log`, `devel_query_log` etc.
+
+This is done by adding these modules to the `require-dev` section.  Simply use the `--dev` composer flag when requiring the module.
+
+For example, to add the devel module to your project:
+
+```sh
+composer require --dev drupal/devel
+```
+
+Or the Drupal core developer tools:
+
+```sh
+ddev composer require drupal/core-dev --dev
+```
+
+
+To install all the modules (e.g. on your local environment) including those in the `require-dev` section:
+
+```sh
+composer install 
+Or the deprecated:
+composer install --dev
+```
+
+
+For production you can install only items in the `require` section ie. without development dependencies using:
+```sh
+composer install --no-dev
+```
+
+::: tip Note
+The Composer `--dev` flag is deprecated, meaning it will eventually be removed and has no effect in Composer 3. Instead of using `--dev`, you should now use the require-dev section in your composer.json file or use the `--no-dev` flag for production deployments.
+:::
+
+
+Example of `composer.json` require-dev section:
+
+```json
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "drupal/coder": "^8.3",
+        "drupal/core-dev": "^10.3",
+        "drupal/devel": "^5.2",
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+```
+
+Here is a complete `composer.json` file from my test project https://github.com/selwynpolit/ddev102 for reference:
+
+```json
+{
+    "name": "drupal/recommended-project",
+    "description": "Project template for Drupal projects with a relocated document root",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://www.drupal.org/project/drupal",
+    "support": {
+        "docs": "https://www.drupal.org/docs/user_guide/en/index.html",
+        "chat": "https://www.drupal.org/node/314178"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        }
+    ],
+    "require": {
+        "composer/installers": "^2.0",
+        "cweagans/composer-patches": "^1.7",
+        "drupal/admin_toolbar": "^3.4",
+        "drupal/bartik": "^1.0",
+        "drupal/conditional_fields": "^4.0@alpha",
+        "drupal/core-composer-scaffold": "^10.2",
+        "drupal/core-project-message": "^10.2",
+        "drupal/core-recommended": "^10.2",
+        "drupal/entity": "^1.4",
+        "drupal/environment_indicator": "^4.0",
+        "drupal/examples": "^4.0",
+        "drupal/extlink": "^2.0",
+        "drupal/inline_entity_form": "^3.0@RC",
+        "drupal/jsonapi_extras": "^3.24",
+        "drupal/lb_plus": "^2.1",
+        "drupal/leaflet": "^10.2",
+        "drupal/map_provider": "^1.0",
+        "drupal/markdown_easy": "^1.0",
+        "drupal/masquerade": "^2.0@RC",
+        "drupal/menu_custom_access": "^2.0@beta",
+        "drupal/module_filter": "^5.0",
+        "drupal/node_view_permissions": "^1.6",
+        "drupal/openstreetmap": "^1.0",
+        "drupal/paragraphs": "^1.17",
+        "drupal/pathauto": "^1.12",
+        "drupal/permissions_by_term": "^3.1",
+        "drupal/redirect": "^1.9",
+        "drupal/restui": "^1.21",
+        "drupal/simple_oauth": "^6.0-beta",
+        "drupal/smart_date": "^4.1",
+        "drupal/smart_date_starter_kit": "^2.3",
+        "drupal/unique_field": "^2.2",
+        "drupal/workbench": "^1.4",
+        "drupal/workbench_menu_access": "^2.1",
+        "drush/drush": "^12.5"
+    },
+    "conflict": {
+        "drupal/drupal": "*"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "drupal/core-composer-scaffold": true,
+            "drupal/core-project-message": true,
+            "phpstan/extension-installer": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": true,
+            "tbachert/spi": true,
+            "cweagans/composer-patches": true
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "drupal-scaffold": {
+            "locations": {
+                "web-root": "web/"
+            }
+        },
+        "installer-paths": {
+            "web/core": [
+                "type:drupal-core"
+            ],
+            "web/libraries/{$name}": [
+                "type:drupal-library"
+            ],
+            "web/modules/contrib/{$name}": [
+                "type:drupal-module"
+            ],
+            "web/profiles/contrib/{$name}": [
+                "type:drupal-profile"
+            ],
+            "web/themes/contrib/{$name}": [
+                "type:drupal-theme"
+            ],
+            "drush/Commands/contrib/{$name}": [
+                "type:drupal-drush"
+            ],
+            "web/modules/custom/{$name}": [
+                "type:drupal-custom-module"
+            ],
+            "web/profiles/custom/{$name}": [
+                "type:drupal-custom-profile"
+            ],
+            "web/themes/custom/{$name}": [
+                "type:drupal-custom-theme"
+            ]
+        },
+        "drupal-core-project-message": {
+            "include-keys": [
+                "homepage",
+                "support"
+            ],
+            "post-create-project-cmd-message": [
+                "<bg=blue;fg=white>                                                         </>",
+                "<bg=blue;fg=white>  Congratulations, you’ve installed the Drupal codebase  </>",
+                "<bg=blue;fg=white>  from the drupal/recommended-project template!          </>",
+                "<bg=blue;fg=white>                                                         </>",
+                "",
+                "<bg=yellow;fg=black>Next steps</>:",
+                "  * Install the site: https://www.drupal.org/docs/installing-drupal",
+                "  * Read the user guide: https://www.drupal.org/docs/user_guide/en/index.html",
+                "  * Get support: https://www.drupal.org/support",
+                "  * Get involved with the Drupal community:",
+                "      https://www.drupal.org/getting-involved",
+                "  * Remove the plugin that prints this message:",
+                "      composer remove drupal/core-project-message"
+            ]
+        },
+        "patches": {
+            "drupal/permissions_by_term": {
+                "Extend permissions by edit and create permissions for related nodes - 2926212": "https://www.drupal.org/files/issues/2024-07-31/2926212-18.patch"
+            }
+        }
+    },
+    "require-dev": {
+        "drupal/core-dev": "^10.2",
+        "drupal/devel": "^5.2"
+    }
+}
+```
+
+
+## composer audit
+The `composer audit` command checks your project for known security vulnerabilities in the installed packages. More at [php.watch article](https://php.watch/articles/composer-audit).
+
+See example output:
+
+```sh
+$ composer audit
+Found 10 security vulnerability advisories affecting 3 packages:
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          |                                                                                  |
+| CVE               | CVE-2025-3057                                                                    |
+| Title             | Drupal core - Critical - Cross site scripting - SA-CORE-2025-001                 |
+| URL               | https://www.drupal.org/sa-core-2025-001                                          |
+| Affected versions | >= 8.0.0 < 10.3.13 || >= 10.4.0 < 10.4.3 || >= 11.0.0 < 11.0.12 || >= 11.1.0 <   |
+|                   | 11.1.3                                                                           |
+| Reported at       | 2025-02-19T16:49:28+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          |                                                                                  |
+| CVE               | CVE-2025-31673                                                                   |
+| Title             | Drupal core - Moderately critical - Access bypass - SA-CORE-2025-002             |
+| URL               | https://www.drupal.org/sa-core-2025-002                                          |
+| Affected versions | >= 8.0.0 < 10.3.13 || >= 10.4.0 < 10.4.3 || >= 11.0.0 < 11.0.12 || >= 11.1.0 <   |
+|                   | 11.1.3                                                                           |
+| Reported at       | 2025-02-19T16:58:10+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          |                                                                                  |
+| CVE               | CVE-2025-31674                                                                   |
+| Title             | Drupal core - Moderately critical - Gadget Chain - SA-CORE-2025-003              |
+| URL               | https://www.drupal.org/sa-core-2025-003                                          |
+| Affected versions | >= 8.0.0 < 10.3.13 || >= 10.4.0 < 10.4.3 || >= 11.0.0 < 11.0.12 || >= 11.1.0 <   |
+|                   | 11.1.3                                                                           |
+| Reported at       | 2025-02-19T17:03:28+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          |                                                                                  |
+| CVE               | CVE-2025-31675                                                                   |
+| Title             | Drupal core - Moderately critical - Cross Site Scripting - SA-CORE-2025-004      |
+| URL               | https://www.drupal.org/sa-core-2025-004                                          |
+| Affected versions | >= 8.0.0 < 10.3.14 || >= 10.4.0 < 10.4.5 || >= 11.0.0 < 11.0.13 || >= 11.1.0 <   |
+|                   | 11.1.5                                                                           |
+| Reported at       | 2025-03-19T18:54:35+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          | medium                                                                           |
+| CVE               | CVE-2025-3057                                                                    |
+| Title             | Drupal Core Potential Cross-Site Scripting (XSS) via Error Messages              |
+| URL               | https://github.com/advisories/GHSA-39g6-x4x8-5jcm                                |
+| Affected versions | >=11.1.0,<11.1.3|>=11.0.0,<11.0.12|>=10.4.0,<10.4.3|>=8.0.0,<10.3.13             |
+| Reported at       | 2025-04-01T00:30:35+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          | medium                                                                           |
+| CVE               | CVE-2025-31674                                                                   |
+| Title             | Drupal Core Improperly Controlled Modification of Dynamically-Determined Object  |
+|                   | Attributes Vulnerability                                                         |
+| URL               | https://github.com/advisories/GHSA-2qph-q8xw-gv7q                                |
+| Affected versions | >=11.1.0,<11.1.3|>=11.0.0,<11.0.12|>=10.4.0,<10.4.3|>=8.0.0,<10.3.13             |
+| Reported at       | 2025-04-01T00:30:33+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          | low                                                                              |
+| CVE               | CVE-2025-31675                                                                   |
+| Title             | Drupal Core Cross-Site Scripting (XSS) Vulnerability                             |
+| URL               | https://github.com/advisories/GHSA-m4wj-hhwj-47qp                                |
+| Affected versions | >=11.1.0,<11.1.5|>=11.0.0,<11.0.13|>=10.4.0,<10.4.5|>=8.0.0,<10.3.14             |
+| Reported at       | 2025-04-01T00:30:33+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/core                                                                      |
+| Severity          | medium                                                                           |
+| CVE               | CVE-2025-31673                                                                   |
+| Title             | Drupal Core Vulnerable to Forceful Browsing                                      |
+| URL               | https://github.com/advisories/GHSA-wpp8-fjgf-pwc7                                |
+| Affected versions | >=11.1.0,<11.1.3|>=11.0.0,<11.0.12|>=10.4.0,<10.4.3|>=8.0.0,<10.3.13             |
+| Reported at       | 2025-04-01T00:30:33+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | drupal/search_api_solr                                                           |
+| Severity          |                                                                                  |
+| CVE               | CVE-2025-3907                                                                    |
+| Title             | Search API Solr - Moderately critical - Cross Site Request Forgery -             |
+|                   | SA-CONTRIB-2025-046                                                              |
+| URL               | https://www.drupal.org/sa-contrib-2025-046                                       |
+| Affected versions | <4.3.9                                                                           |
+| Reported at       | 2025-04-23T16:59:33+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
++-------------------+----------------------------------------------------------------------------------+
+| Package           | twig/twig                                                                        |
+| Severity          | medium                                                                           |
+| CVE               | CVE-2025-24374                                                                   |
+| Title             | Missing output escaping for the null coalesce operator                           |
+| URL               | https://symfony.com/blog/twig-cve-2025-24374-missing-output-escaping-for-the-nul |
+|                   | l-coalesce-operator                                                              |
+| Affected versions | >=3.16.0,<3.19.0                                                                 |
+| Reported at       | 2025-01-29T06:52:00+00:00                                                        |
++-------------------+----------------------------------------------------------------------------------+
+```
+
 
 
 
@@ -934,7 +1369,7 @@ Then I reinstalled the correct version of drush with `composer require drush/dru
 
 ### Composer won\'t install a module
 
-In this case I am trying to install the `csv_serialization` module.  I get the following error:
+In this case, I am trying to install the `csv_serialization` module.  I get the following error:
 
 ```sh
 composer require 'drupal/csv_serialization:^4.0'
@@ -963,7 +1398,7 @@ drupal/views_data_export   1.3.0      requires drupal/csv_serialization (~1.4 ||
 Not finding what you were looking for? Try calling `composer update "drupal/csv_serialization:^4.0" --dry-run` to get another view on the problem.
 ```
 
-So it looks like the `drupal/recommended-project` requires `drupal/csv_serialization ^3.0` which should not be a problem. Also `drupal/views_data_export` requires `~1.4 || ~2.0 || ~3`.  
+So it looks like the `drupal/recommended-project` requires `drupal/csv_serialization ^3.0` which should not be a problem. Also, `drupal/views_data_export` requires `~1.4 || ~2.0 || ~3`.
 
 I can try the `--dry-run` option to see what happens:
 
@@ -1026,7 +1461,7 @@ Run "composer audit" for a full list of advisories.
 
 
 ### Composer won\'t update a module
-In this instance I want to update a Drupal 10 site with the [metatag](https://www.drupal.org/project/metatag) module. This site has the `"drupal/metatag": "^1.26",` version and there is a `2.02` version available I try to update the module with:
+In this instance, I want to update a Drupal 10 site with the [metatag](https://www.drupal.org/project/metatag) module. This site has the `"drupal/metatag": "^1.26",` version and there is a `2.02` version available I try to update the module with:
 
 ```sh
 ddev composer update drupal/metatag
@@ -1049,7 +1484,7 @@ Not finding what you were looking for? Try calling `composer require "drupal/met
 Composer [prohibits drupal/metatag 2.0] failed, composer command failed: exit status 1. stderr=
 ```
 
-Note. the `udda/udda_rd` represents the entire project and so it i listed as requiring `drupal\metatag`.
+Note, the `udda/udda_rd` represents the entire project and so it i listed as requiring `drupal\metatag`.
 
 
 
@@ -1075,7 +1510,7 @@ drupal/metatag 2.0.2 Manage meta tags for all entities.
 Not finding what you were looking for? Try calling `composer require "drupal/metatag:2.0.2" --dry-run` to get another view on the problem.
 ```
 and the same for `schema_metatag`.
-  
+
 ```sh
 ddev composer prohibits drupal/schema_metatag 3.0.3 -t
 drupal/schema_metatag 3.0.3 Metatag implementation of Schema.org structured data (JSON-LD)
@@ -1085,7 +1520,7 @@ Not finding what you were looking for? Try calling `composer require "drupal/sch
 
 
 To update both at the same time use the following:
-  
+
 ```sh
   ddev composer require drupal/schema_metatag:^3.0 drupal/metatag:^2.0
 ./composer.json has been updated

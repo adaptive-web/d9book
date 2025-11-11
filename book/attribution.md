@@ -6,7 +6,7 @@ title: Attribution
 
 ![views](https://api.visitor.plantree.me/visitor-badge/pv?label=views&color=informational&namespace=d9book&key=attribution.md)
 
-Thanks to these rockstars for their contribution to the project. Please add your name below!
+Thanks to these rock stars for their contribution to the project. Please add your name below!
 
 [Danny Lufkin](https://github.com/dlufkin) - provided inspiration and hopefully some front-end code.
 
@@ -63,3 +63,23 @@ Thanks to these rockstars for their contribution to the project. Please add your
 [hazn](https://github.com/haznai) - Clarification.
 
 [Brendan Johnson](https://github.com/Lustratus) - Menu Listbuilder magic.
+
+[Randy Fay](https://github.com/rfay) - DDEV updates and so much more.
+
+[Raynald Mompoint](https://github.com/raynaldmo) - Updates to the learning chapter
+
+[GeorgiadisChristos](https://github.com/GeorgiadisChristos) - Migrate chapter fixes.
+
+[Nathan Kenall](https://github.com/boinkster) - Queries.
+
+[Pramod Ganore](https://github.com/pramodganore) - Localstack.
+
+[Trevor James](https://github.com/trevorjames) - DDEV Development.
+
+[Dan Lemon](https://github.com/dan2k3k4) - AI contributions.
+
+[Steven DuBois](https://github.com/sdubois) - Twig.
+
+[Geert Selderslaghs](https://github.com/gselderslaghs) - hooks.
+
+[Serhii Checheniev](https://github.com/serhii-checheniev) - Fixed up many many typos, spelling and grammatical errors.

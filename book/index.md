@@ -5,7 +5,7 @@ layout: home
 hero:
   name: 'Drupal at your fingertips'
   text: 'by Selwyn Polit'
-  tagline: "Modern Drupal developer's quick code reference for versions 9 and 10"
+  tagline: "A modern Drupal quick reference for developers"
   image:
     src: /images/d9book.svg
     alt: Drupal at your Fingertips
@@ -23,6 +23,12 @@ features:
     title: Actions
     details: Use the Drupal core Actions module to control Drupal
     link: /actions
+
+  - icon: 🤯
+    title: Artificial Intelligence
+    details: Dig into the world of AI and Drupal
+    link: /ai
+
 
   - icon: 🪣
     title: AJAX
@@ -68,6 +74,11 @@ features:
     title: Debugging
     details: Debugging with PhpStorm, DDEV and Xdebug
     link: /debugging
+
+  # - icon: 💔
+  #   title: Decoupled Drupal
+  #   details: REST API, GraphQL, JSONAPI
+  #   link: /decoupled
 
   - icon: 👩‍💻
     title: Development
@@ -119,10 +130,10 @@ features:
     details: Using Javascript in Drupal
     link: /javascript
 
-  - icon: 🏋🏽‍♂️
-    title: Layout Builder
-    details: Building layouts with the Layout Builder
-    link: /layoutbuilder
+  # - icon: 🏋🏽‍♂️
+  #   title: Layout Builder
+  #   details: Building layouts with the Layout Builder
+  #   link: /layoutbuilder
 
   - icon: 🎓
     title: Learning
@@ -201,7 +212,7 @@ features:
 
   - icon: 🚦
     title: Routes and Controllers
-    details: Navigating around Drupal 
+    details: Navigating around Drupal
     link: /routes
 
   - icon: 🔐
